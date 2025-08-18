@@ -9,8 +9,11 @@
 export interface TicketPrices {
   single: number;
   series: SeriesTicket;
+  daily: number;
   monthly: number;
   continuousMonthly: number;
+  season: SeasonTicket;
+  saverSubscription: number;
   timestamp: number;
 }
 
@@ -21,6 +24,15 @@ export interface SeriesTicket {
   price: number;
   journeys: number;
   validityDays: number;
+}
+
+/**
+ * Season ticket information
+ */
+export interface SeasonTicket {
+  price: number;
+  durationDays: number;
+  type: 'season' | 'continuous';
 }
 
 /**
@@ -38,8 +50,11 @@ export interface UserInput {
 export interface CalculationResults {
   single?: CostBreakdown;
   series?: SeriesCalculation;
+  daily?: CostBreakdown;
   monthly?: CostBreakdown;
   continuousMonthly?: CostBreakdown;
+  season?: CostBreakdown;
+  saverSubscription?: CostBreakdown;
   optimal: string;
 }
 
@@ -82,13 +97,76 @@ export interface ValidationResult {
  * Ticket type option for form
  */
 export interface TicketOption {
-  type: 'single' | 'series' | 'monthly' | 'continuousMonthly';
+  type: 'single' | 'series' | 'daily' | 'monthly' | 'continuousMonthly' | 'season' | 'saverSubscription';
   name: string;
   enabled: boolean;
 }
 
 /**
- * HSL API response types
+ * HSL API response types based on actual API structure
+ */
+
+/**
+ * Point of sale information for tickets
+ */
+export interface PointOfSale {
+  icon: string;
+  title: string;
+  linkLabel: string;
+  linkUrl: string;
+  buttonColor: string;
+}
+
+/**
+ * Detailed ticket data from HSL API
+ */
+export interface TicketData {
+  productId: string;
+  productSku: string;
+  hslProductId: string | null;
+  productGroup: string;
+  customerGroup: string;
+  usage: string;
+  billingModel: string;
+  validityArea: string;
+  residence: string | null;
+  pricingPlanId: string | null;
+  pricingPlanTitle: string | null;
+  price: number;
+  validFrom: string;
+  validUntil: string;
+  purchaseMethod: string | null;
+  durationDays: number;
+  purchaseMethods: string[];
+}
+
+/**
+ * Individual ticket information from HSL API
+ */
+export interface HSLTicket {
+  id: string;
+  ticketType: number;
+  title: string;
+  price: number;
+  salePrice: number | null;
+  pricePerDay: number;
+  durationMinutes: number;
+  durationDays: number;
+  customerGroup: number;
+  zones: number;
+  pointsOfSale: PointOfSale[];
+  _data: TicketData[];
+}
+
+/**
+ * HSL API response for tickets
+ */
+export interface HSLTicketsResponse {
+  tickets: HSLTicket[];
+}
+
+/**
+ * Legacy response types for backward compatibility
  */
 export interface HSLSingleResponse {
   data: {

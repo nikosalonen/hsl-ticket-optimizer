@@ -21,7 +21,7 @@
   - Write unit tests for cache functionality
   - _Requirements: 2.4, 2.5_
 
-- [ ] 4. Create Price Service for HSL API integration
+- [x] 4. Create Price Service for HSL API integration
   - Implement fetchTicketPrices method with proper error handling
   - Create methods for different ticket types (single, series, monthly)
   - Integrate with Cache Manager for price caching
