@@ -1,21 +1,508 @@
 // Main application entry point
-console.log('HSL Ticket Optimizer loaded');
 
-// Placeholder for main application logic
-// This will be implemented in subsequent tasks
+import Chart from "chart.js/auto";
+import { PriceService, priceService } from "./services/PriceService.js";
 
-// Type-safe placeholder for future implementation
+console.log("HSL Ticket Optimizer loaded");
+
+// Keep references to charts so we can destroy and re-create them safely
+let costComparisonChart: Chart | null = null;
+let tripsCostChart: Chart | null = null;
+
 interface AppState {
-  isLoading: boolean;
-  error: string | null;
-  results: any | null;
+	isLoading: boolean;
+	error: string | null;
+	results: unknown | null;
 }
 
 const appState: AppState = {
-  isLoading: false,
-  error: null,
-  results: null
+	isLoading: false,
+	error: null,
+	results: null,
 };
 
-// Export for potential use in other modules
+function setLoading(isLoading: boolean) {
+	appState.isLoading = isLoading;
+	const loadingEl = document.getElementById("loading");
+	if (!loadingEl) return;
+	if (isLoading) loadingEl.classList.remove("hidden");
+	else loadingEl.classList.add("hidden");
+}
+
+function showError(message: string) {
+	appState.error = message;
+	const errorWrap = document.getElementById("error");
+	const msgEl = document.querySelector("#error .error-message");
+	if (errorWrap) errorWrap.classList.remove("hidden");
+	if (msgEl) msgEl.textContent = message;
+}
+
+function hideError() {
+	appState.error = null;
+	const errorWrap = document.getElementById("error");
+	if (errorWrap) errorWrap.classList.add("hidden");
+}
+
+function showResults(html: string) {
+	const resultsWrap = document.getElementById("results");
+	const content = document.getElementById("results-content");
+	if (content) content.innerHTML = html;
+	if (resultsWrap) resultsWrap.classList.remove("hidden");
+}
+
+function hideResults() {
+	const resultsWrap = document.getElementById("results");
+	const content = document.getElementById("results-content");
+	if (content) content.innerHTML = "";
+	if (resultsWrap) resultsWrap.classList.add("hidden");
+}
+
+function normalizeZonesInput(rawValue: string): string {
+	// Map legacy numeric values from the HTML select to API zone codes
+	const legacyMap: Record<string, string> = {
+		"12": "11", // AB
+		"123": "12", // ABC
+		"1234": "13", // ABCD
+		"234": "22", // BCD
+		"34": "31", // CD
+		"4": "40", // D
+	};
+
+	if (legacyMap[rawValue]) return legacyMap[rawValue];
+
+	// If user-provided letters (e.g., AB, ABC), convert using helper
+	const letters = rawValue.trim();
+	if (/^[A-D]+$/i.test(letters)) {
+		try {
+			return PriceService.getZoneCode(letters.toUpperCase());
+		} catch {
+			return rawValue;
+		}
+	}
+
+	// Otherwise assume already in API format (e.g., "11", "12", ...)
+	return rawValue;
+}
+
+type OptimalResult = ReturnType<typeof priceService.findOptimalOption>;
+
+function renderComparison(result: OptimalResult) {
+	type RowKey =
+		| "single"
+		| "series10"
+		| "series20"
+		| "season"
+		| "continuousMonthly";
+
+	const rows: Array<{
+		label: string;
+		key: RowKey;
+		cost: number;
+		annualCost: number;
+		calc: string;
+		description: string;
+		icon: string;
+	}> = [
+		{
+			label: "Single tickets",
+			key: "single",
+			cost: result.single.monthlyCost,
+			annualCost: result.single.annualCost,
+			calc: result.single.calculation,
+			description: "Pay per trip",
+			icon: "🎫",
+		},
+		{
+			label: "Season tickets",
+			key: "season",
+			cost: result.season.monthlyCost,
+			annualCost: result.season.annualCost,
+			calc: result.season.calculation,
+			description: "Annual subscription",
+			icon: "📅",
+		},
+		{
+			label: "Continuous monthly",
+			key: "continuousMonthly",
+			cost: result.continuousMonthly.monthlyCost,
+			annualCost: result.continuousMonthly.annualCost,
+			calc: result.continuousMonthly.calculation,
+			description: "Monthly auto-renewal",
+			icon: "🔄",
+		},
+	];
+
+	// Add series tickets only if they are available
+	if (result.series10) {
+		rows.push({
+			label: "10-trip series",
+			key: "series10",
+			cost: result.series10.monthlyCost,
+			annualCost: result.series10.annualCost,
+			calc: result.series10.calculation,
+			description: "10 trips, 30-day validity",
+			icon: "📦",
+		});
+	}
+
+	if (result.series20) {
+		rows.push({
+			label: "20-trip series",
+			key: "series20",
+			cost: result.series20.monthlyCost,
+			annualCost: result.series20.annualCost,
+			calc: result.series20.calculation,
+			description: "20 trips, 60-day validity",
+			icon: "📦",
+		});
+	}
+
+	// Sort by cost for better visual hierarchy
+	const sortedRows = [...rows].sort((a, b) => a.cost - b.cost);
+	const optimalRow = rows.find((r) => r.key === result.optimal);
+
+	const list = sortedRows
+		.map((r, index) => {
+			const isOptimal = r.key === result.optimal;
+			const savingsVsWorst =
+				(sortedRows[sortedRows.length - 1]?.cost || 0) - r.cost;
+			const rank = index + 1;
+
+			return `
+				<div class="result-card ${isOptimal ? "optimal" : ""}" data-rank="${rank}">
+					<div class="result-header">
+						<div class="result-icon">${r.icon}</div>
+						<div class="result-title-section">
+							<h3 class="result-title">${r.label}</h3>
+							<p class="result-description">${r.description}</p>
+						</div>
+						${isOptimal ? '<div class="best-badge">🏆 Best Choice</div>' : ""}
+					</div>
+
+					<div class="result-costs">
+						<div class="monthly-cost">
+							<span class="cost-label">Monthly</span>
+							<span class="cost-value">€${r.cost.toFixed(2)}</span>
+						</div>
+						<div class="annual-cost">
+							<span class="cost-label">Annual</span>
+							<span class="cost-value">€${r.annualCost.toFixed(2)}</span>
+						</div>
+					</div>
+
+					${
+						savingsVsWorst > 0
+							? `
+						<div class="savings">
+							💰 Save €${savingsVsWorst.toFixed(2)}/month vs most expensive
+						</div>
+					`
+							: ""
+					}
+
+					<div class="result-calculation">
+						<details>
+							<summary>How this is calculated</summary>
+							<p>${r.calc}</p>
+						</details>
+					</div>
+				</div>
+			`;
+		})
+		.join("");
+
+	const optimalSavings = optimalRow
+		? (sortedRows[sortedRows.length - 1]?.cost || 0) - optimalRow.cost
+		: 0;
+
+	return `
+		<div class="results-summary">
+			<div class="summary-card">
+				<h3>🎯 Recommendation</h3>
+				<p class="optimal-choice">
+					<strong>${optimalRow?.label || result.optimal}</strong> is your best option
+				</p>
+				<p class="optimal-cost">€${optimalRow?.cost.toFixed(2) || "0"} per month</p>
+				${
+					optimalSavings > 0
+						? `
+					<p class="savings-summary">
+						Save €${optimalSavings.toFixed(2)}/month (€${(optimalSavings * 12).toFixed(2)}/year)
+					</p>
+				`
+						: ""
+				}
+			</div>
+		</div>
+
+		<div class="results-comparison">
+			<h3>📊 All Options Compared</h3>
+			<div class="results-grid">
+				${list}
+			</div>
+		</div>
+	`;
+}
+
+function renderCostComparisonChart(result: OptimalResult) {
+	const ctx = document.getElementById(
+		"cost-comparison-chart",
+	) as HTMLCanvasElement | null;
+	if (!ctx) return;
+
+	// Destroy previous chart instance if it exists
+	if (costComparisonChart) {
+		costComparisonChart.destroy();
+		costComparisonChart = null;
+	}
+
+	const labels: string[] = ["Single", "Season", "Continuous Monthly"];
+	const data: number[] = [
+		result.single.monthlyCost,
+		result.season.monthlyCost,
+		result.continuousMonthly.monthlyCost,
+	];
+	if (result.series10) {
+		labels.push("10-trip series");
+		data.push(result.series10.monthlyCost);
+	}
+	if (result.series20) {
+		labels.push("20-trip series");
+		data.push(result.series20.monthlyCost);
+	}
+
+	costComparisonChart = new Chart(ctx, {
+		type: "bar",
+		data: {
+			labels,
+			datasets: [
+				{
+					label: "Monthly Cost (€)",
+					data,
+					backgroundColor: "rgba(0, 102, 204, 0.2)",
+					borderColor: "rgba(0, 102, 204, 1)",
+					borderWidth: 1,
+				},
+			],
+		},
+		options: {
+			responsive: true,
+			plugins: {
+				legend: { display: false },
+				tooltip: { enabled: true },
+			},
+			scales: {
+				y: {
+					beginAtZero: true,
+					title: { display: true, text: "€ per month" },
+				},
+			},
+		},
+	});
+}
+
+async function renderTripsCostChart(
+	baseTripsPerWeek: number,
+	baseOptions: {
+		single: number;
+		season: number;
+		continuousMonthly?: number;
+		series10?: { price: number; journeys: number; validityDays: number };
+		series20?: { price: number; journeys: number; validityDays: number };
+	},
+) {
+	const ctx = document.getElementById(
+		"trips-cost-chart",
+	) as HTMLCanvasElement | null;
+	if (!ctx) return;
+
+	// Destroy previous chart instance if it exists
+	if (tripsCostChart) {
+		tripsCostChart.destroy();
+		tripsCostChart = null;
+	}
+
+	const tripsRange: number[] = [];
+	for (
+		let t = Math.max(1, baseTripsPerWeek - 10);
+		t <= baseTripsPerWeek + 10;
+		t++
+	) {
+		tripsRange.push(t);
+	}
+
+	const singleCosts: number[] = [];
+	const seasonCosts: number[] = [];
+	const contMonthlyCosts: number[] = [];
+	const series10Costs: number[] = [];
+	const series20Costs: number[] = [];
+
+	for (const t of tripsRange) {
+		const comparison = priceService.findOptimalOption(t, baseOptions);
+		singleCosts.push(comparison.single.monthlyCost);
+		seasonCosts.push(comparison.season.monthlyCost);
+		contMonthlyCosts.push(comparison.continuousMonthly.monthlyCost);
+		if (comparison.series10)
+			series10Costs.push(comparison.series10.monthlyCost);
+		if (comparison.series20)
+			series20Costs.push(comparison.series20.monthlyCost);
+	}
+
+	const datasets: Array<{
+		label: string;
+		data: number[];
+		borderColor: string;
+		backgroundColor: string;
+	}> = [
+		{
+			label: "Single",
+			data: singleCosts,
+			borderColor: "#888",
+			backgroundColor: "transparent",
+		},
+		{
+			label: "Season",
+			data: seasonCosts,
+			borderColor: "#0066cc",
+			backgroundColor: "transparent",
+		},
+		{
+			label: "Continuous",
+			data: contMonthlyCosts,
+			borderColor: "#2e7d32",
+			backgroundColor: "transparent",
+		},
+	];
+	if (series10Costs.length)
+		datasets.push({
+			label: "Series 10",
+			data: series10Costs,
+			borderColor: "#9c27b0",
+			backgroundColor: "transparent",
+		});
+	if (series20Costs.length)
+		datasets.push({
+			label: "Series 20",
+			data: series20Costs,
+			borderColor: "#ff9800",
+			backgroundColor: "transparent",
+		});
+
+	tripsCostChart = new Chart(ctx, {
+		type: "line",
+		data: {
+			labels: tripsRange.map((t) => `${t}`),
+			datasets,
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: true,
+			aspectRatio: 2.5,
+			plugins: { legend: { position: "top" as const } },
+			interaction: { intersect: false, mode: "index" as const },
+			scales: {
+				x: { title: { display: true, text: "Trips per week" } },
+				y: { beginAtZero: true, title: { display: true, text: "€ per month" } },
+			},
+		},
+	});
+}
+
+// This function is no longer needed since we show all ticket types by default
+// function getSelectedTicketTypes(): Set<string> {
+// 	const boxes = document.querySelectorAll<HTMLInputElement>(
+// 		'input[name="ticketTypes"]:checked',
+// 	);
+// 	const selected = new Set<string>();
+// 	boxes.forEach((b) => {
+// 		selected.add(b.value);
+// 	});
+// 	return selected;
+// }
+
+async function onSubmit(event: SubmitEvent) {
+	event.preventDefault();
+	hideError();
+	hideResults();
+	setLoading(true);
+
+	try {
+		const form = event.target as HTMLFormElement;
+		const zonesSelect = form.querySelector<HTMLSelectElement>("#zones");
+		const tripsInput = form.querySelector<HTMLInputElement>("#tripsPerWeek");
+		const municipalitySelect = form.querySelector<HTMLSelectElement>(
+			"#homemunicipality",
+		);
+
+		const rawZones = zonesSelect?.value || "";
+		const zones = normalizeZonesInput(rawZones);
+		const tripsPerWeek = Number(tripsInput?.value || "0");
+		const homemunicipality = (municipalitySelect?.value || "helsinki").toLowerCase();
+
+		if (!zones) {
+			showError("Please select travel zones");
+			return;
+		}
+		if (Number.isNaN(tripsPerWeek) || tripsPerWeek < 0) {
+			showError("Please enter a valid number of trips per week");
+			return;
+		}
+
+		const pricesResult = await priceService.fetchFilteredTicketPrices(
+			zones,
+			1,
+			homemunicipality,
+			tripsPerWeek,
+		);
+
+		const comparisonOptions: {
+			single: number;
+			series10?: { price: number; journeys: number; validityDays: number };
+			series20?: { price: number; journeys: number; validityDays: number };
+			season: number;
+			continuousMonthly?: number;
+		} = {
+			single: pricesResult.single,
+			season: pricesResult.season.price,
+			continuousMonthly: pricesResult.continuousMonthly,
+		};
+
+		// Only add series tickets if they are available
+		if (pricesResult.availableSeriesTickets.series10) {
+			comparisonOptions.series10 = pricesResult.availableSeriesTickets.series10;
+		}
+		if (pricesResult.availableSeriesTickets.series20) {
+			comparisonOptions.series20 = pricesResult.availableSeriesTickets.series20;
+		}
+
+		const comparison = priceService.findOptimalOption(
+			tripsPerWeek,
+			comparisonOptions,
+		);
+
+		// Show all available ticket types with the true optimal option
+		const html = renderComparison(comparison);
+		showResults(html);
+		// Render charts
+		renderCostComparisonChart(comparison);
+		void renderTripsCostChart(tripsPerWeek, comparisonOptions);
+	} catch (error: unknown) {
+		const message =
+			error instanceof Error
+				? error.message
+				: "Unexpected error occurred while calculating";
+		showError(message);
+	} finally {
+		setLoading(false);
+	}
+}
+
+// Wire up the form when DOM is ready
+const formEl = document.getElementById("ticket-form");
+if (formEl) {
+	formEl.addEventListener("submit", (evt) => {
+		void onSubmit(evt as SubmitEvent);
+	});
+}
+
 export { appState };

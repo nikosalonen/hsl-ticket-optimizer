@@ -17,28 +17,6 @@
         <main>
             <form id="ticket-form" class="ticket-form">
                 <div class="form-section">
-                    <h2>Select Ticket Types to Compare</h2>
-                    <div class="checkbox-group">
-                        <label>
-                            <input type="checkbox" name="ticketTypes" value="single" checked>
-                            Single-use tickets
-                        </label>
-                        <label>
-                            <input type="checkbox" name="ticketTypes" value="series" checked>
-                            Series tickets (sarjalippu)
-                        </label>
-                        <label>
-                            <input type="checkbox" name="ticketTypes" value="monthly" checked>
-                            Monthly tickets
-                        </label>
-                        <label>
-                            <input type="checkbox" name="ticketTypes" value="continuousMonthly" checked>
-                            Continuous monthly orders
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-section">
                     <label for="zones">Travel Zones:</label>
                     <select id="zones" name="zones" required>
                         <option value="">Select zones</option>
@@ -48,6 +26,37 @@
                         <option value="234">BCD - Espoo, Vantaa + outer areas</option>
                         <option value="34">CD - Outer areas only</option>
                         <option value="4">D - Furthest zones</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <label for="homemunicipality">Home municipality (Kotikunta):</label>
+                    <select id="homemunicipality" name="homemunicipality" required>
+                        <option value="helsinki" selected>Helsinki</option>
+                        <option value="espoo">Espoo</option>
+                        <option value="vantaa">Vantaa</option>
+                        <option value="kauniainen">Kauniainen</option>
+                        <option value="kerava">Kerava</option>
+                        <option value="kirkkonummi">Kirkkonummi</option>
+                        <option value="sipoo">Sipoo</option>
+                        <option value="siuntio">Siuntio</option>
+                        <option value="tuusula">Tuusula</option>
+                        <option value="askola">Askola</option>
+                        <option value="hanko">Hanko</option>
+                        <option value="hausjarvi">Hausjärvi</option>
+                        <option value="inkoo">Inkoo</option>
+                        <option value="jarvenpaa">Järvenpää</option>
+                        <option value="karkkila">Karkkila</option>
+                        <option value="lohja">Lohja</option>
+                        <option value="loppi">Loppi</option>
+                        <option value="mantsala">Mäntsälä</option>
+                        <option value="nurmijarvi">Nurmijärvi</option>
+                        <option value="pornainen">Pornainen</option>
+                        <option value="porvoo">Porvoo</option>
+                        <option value="pukkila">Pukkila</option>
+                        <option value="raasepori">Raasepori</option>
+                        <option value="vihti">Vihti</option>
+                        <option value="muu">Muu</option>
                     </select>
                 </div>
 
@@ -70,6 +79,16 @@
 
             <div id="results" class="results hidden">
                 <h2>Cost Comparison Results</h2>
+                <div id="charts-section" class="charts-section">
+                    <div class="chart-container">
+                        <h3>📊 Monthly Cost Comparison</h3>
+                        <canvas id="cost-comparison-chart"></canvas>
+                    </div>
+                    <div class="chart-container wide">
+                        <h3>📈 Cost vs. Trips per Week</h3>
+                        <canvas id="trips-cost-chart"></canvas>
+                    </div>
+                </div>
                 <div id="results-content"></div>
             </div>
         </main>

@@ -44,7 +44,7 @@ button {
 
 /* Layout */
 #app {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
     background: white;
@@ -103,7 +103,7 @@ header p {
     background-color: #f0f0f0;
 }
 
-label {
+.ticket-form label {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
@@ -182,9 +182,241 @@ small {
     border-top: 2px solid #eee;
 }
 
+/* Charts */
+.charts-section {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+    .charts-section {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.chart-container {
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 0.75rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.chart-container h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.chart-container.wide {
+    grid-column: 1 / -1;
+}
+
 .results h2 {
     color: #0066cc;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+/* Results Summary */
+.results-summary {
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #0066cc, #0052a3);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+}
+
+.summary-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.optimal-choice {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.optimal-cost {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.savings-summary {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
+/* Results Comparison */
+.results-comparison h3 {
+    color: #333;
     margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.results-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Result Cards */
+.result-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.result-card.optimal {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, #f8fff8, #f0fff0);
+    transform: scale(1.02);
+}
+
+.result-card.optimal:hover {
+    transform: scale(1.02) translateY(-2px);
+}
+
+/* Result Header */
+.result-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.result-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.result-title-section {
+    flex: 1;
+}
+
+.result-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.result-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+.best-badge {
+    background: #4CAF50;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Result Costs */
+.result-costs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.monthly-cost,
+.annual-cost {
+    text-align: center;
+}
+
+.cost-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.cost-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.result-card.optimal .cost-value {
+    color: #4CAF50;
+}
+
+/* Savings Display */
+.savings {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    border: 1px solid #c8e6c9;
+}
+
+/* Calculation Details */
+.result-calculation {
+    margin-top: 1rem;
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.result-calculation details {
+    font-size: 0.9rem;
+}
+
+.result-calculation summary {
+    color: #0066cc;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0.25rem 0;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.result-calculation summary:hover {
+    background-color: #f0f7ff;
+}
+
+.result-calculation p {
+    margin: 0.5rem 0 0 0;
+    color: #666;
+    line-height: 1.4;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
 }
 
 /* Footer */
@@ -202,12 +434,42 @@ footer {
     #app {
         padding: 0.5rem;
     }
-    
+
     header h1 {
         font-size: 1.5rem;
     }
-    
+
     .checkbox-group {
         gap: 0.25rem;
+    }
+
+    /* Results responsiveness */
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result-card {
+        padding: 1rem;
+    }
+
+    .optimal-cost {
+        font-size: 1.5rem;
+    }
+
+    .result-costs {
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .cost-value {
+        font-size: 1.1rem;
+    }
+
+    .result-header {
+        gap: 0.5rem;
+    }
+
+    .result-icon {
+        font-size: 1.25rem;
     }
 }

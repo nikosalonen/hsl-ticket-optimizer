@@ -59,8 +59,13 @@ export const TICKET_OPTIONS: TicketOption[] = [
 		enabled: true,
 	},
 	{
-		type: "series",
-		name: "Series tickets (sarjalippu)",
+		type: "series10",
+		name: "10-trip series tickets",
+		enabled: true,
+	},
+	{
+		type: "series20",
+		name: "20-trip series tickets",
 		enabled: true,
 	},
 	{
@@ -170,7 +175,8 @@ export const CSS_CLASSES = {
 export const MOCK_PRICES: Record<string, TicketPrices> = {
 	zones12: {
 		single: 2.95,
-		series: { price: 27.0, journeys: 10, validityDays: 14 },
+		series10: { price: 27.0, journeys: 10, validityDays: 30 },
+		series20: { price: 54.0, journeys: 20, validityDays: 60 },
 		daily: 9.5,
 		monthly: 64.7,
 		continuousMonthly: 61.5,

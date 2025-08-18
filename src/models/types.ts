@@ -8,7 +8,8 @@
  */
 export interface TicketPrices {
   single: number;
-  series: SeriesTicket;
+  series10: SeriesTicket;
+  series20: SeriesTicket;
   daily: number;
   monthly: number;
   continuousMonthly: number;
@@ -49,7 +50,8 @@ export interface UserInput {
  */
 export interface CalculationResults {
   single?: CostBreakdown;
-  series?: SeriesCalculation;
+  series10?: SeriesCalculation;
+  series20?: SeriesCalculation;
   daily?: CostBreakdown;
   monthly?: CostBreakdown;
   continuousMonthly?: CostBreakdown;
@@ -97,7 +99,7 @@ export interface ValidationResult {
  * Ticket type option for form
  */
 export interface TicketOption {
-  type: 'single' | 'series' | 'daily' | 'monthly' | 'continuousMonthly' | 'season' | 'saverSubscription';
+  type: 'single' | 'series10' | 'series20' | 'daily' | 'monthly' | 'continuousMonthly' | 'season' | 'saverSubscription';
   name: string;
   enabled: boolean;
 }

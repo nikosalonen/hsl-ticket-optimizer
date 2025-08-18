@@ -149,37 +149,61 @@ const mockDailyResponse = {
 };
 
 const mockSeasonResponse = {
+	subscriptions: [
+		{
+			id: "saver-subscription-id",
+			title: "Jatkuva säästötilaus",
+			description: "Sitoutuminen vuodeksi (12 veloitusta)",
+			price: 89.8,
+			pricePerDay: 2.99,
+			durationDays: 30,
+			customerGroup: 1,
+			zones: 11,
+			homeMunicipality: "helsinki",
+		},
+		{
+			id: "continuous-subscription-id",
+			title: "Jatkuva tilaus (30 vrk)",
+			description: "Voit lopettaa tilauksen milloin vain",
+			price: 107.7,
+			pricePerDay: 3.59,
+			durationDays: 30,
+			customerGroup: 1,
+			zones: 11,
+			homeMunicipality: "helsinki",
+		},
+	],
 	tickets: [
 		{
 			id: "season-ticket-id",
-			ticketType: 5,
-			title: "Kausilippu",
-			price: 650.0,
+			ticketType: 3,
+			title: "30 vrk",
+			price: 107.7,
 			salePrice: null,
-			pricePerDay: 1.78,
-			durationMinutes: 0,
-			durationDays: 365,
+			pricePerDay: 3.59,
+			durationMinutes: null,
+			durationDays: 30,
 			customerGroup: 1,
 			zones: 11,
 			pointsOfSale: [],
 			_data: [
 				{
 					productId: "season-ticket-id",
-					productSku: "season-adult-personal-AB",
-					hslProductId: "season",
+					productSku: "season-adult-hsl-personal-30-AB",
+					hslProductId: null,
 					productGroup: "season",
 					customerGroup: "adult",
 					usage: "personal",
-					billingModel: "season",
+					billingModel: "one-off",
 					validityArea: "AB",
 					residence: null,
 					pricingPlanId: null,
 					pricingPlanTitle: null,
-					price: 650.0,
+					price: 107.7,
 					validFrom: "2025-01-01T00:00:00",
 					validUntil: "2027-12-31T23:59:59",
 					purchaseMethod: null,
-					durationDays: 365,
+					durationDays: 30,
 					purchaseMethods: ["app", "pos_machine", "card"],
 				},
 			],
@@ -282,18 +306,12 @@ describe("PriceService", () => {
 					ok: true,
 					json: () => Promise.resolve(mockDailyResponse),
 				})
-				.mockResolvedValueOnce({
-					ok: true,
-					json: () => Promise.resolve(mockMonthlyResponse),
-				})
-				.mockResolvedValueOnce({
-					ok: true,
-					json: () => Promise.resolve(mockMonthlyResponse),
-				})
+				// Season response (contains 30-day ticket and subscriptions)
 				.mockResolvedValueOnce({
 					ok: true,
 					json: () => Promise.resolve(mockSeasonResponse),
 				})
+				// Saver-subscription ping (non-essential)
 				.mockResolvedValueOnce({
 					ok: true,
 					json: () => Promise.resolve(mockSaverResponse),
@@ -302,20 +320,25 @@ describe("PriceService", () => {
 			const result = await priceService.fetchTicketPrices("11", 1);
 
 			expect(result.single).toBe(2.95);
-			expect(result.series).toEqual({
+			expect(result.series10).toEqual({
 				price: 28.8,
 				journeys: 10,
 				validityDays: 30,
 			}); // Hardcoded AB pricing
+			expect(result.series20).toEqual({
+				price: 54.4,
+				journeys: 20,
+				validityDays: 60,
+			}); // Hardcoded AB pricing
 			expect(result.daily).toBe(9.5);
-			expect(result.monthly).toBe(64.7);
-			expect(result.continuousMonthly).toBe(61.47); // 5% discount applied
+			expect(result.monthly).toBe(107.7); // 30-day season ticket price
+			expect(result.continuousMonthly).toBe(107.7); // Regular continuous subscription price
 			expect(result.season).toEqual({
-				price: 650.0,
-				durationDays: 365,
+				price: 107.7,
+				durationDays: 30,
 				type: "season",
 			});
-			expect(result.saverSubscription).toBe(580.0);
+			expect(result.saverSubscription).toBe(89.8);
 			expect(result.timestamp).toBeGreaterThan(0);
 
 			// Verify caching
@@ -358,26 +381,23 @@ describe("PriceService", () => {
 
 			await priceService.fetchTicketPrices("11", 1);
 
-			      expect(mockFetch).toHaveBeenCalledWith(
-        "https://cms.hsl.fi/api/v1/tickets/single?language=fi&customerGroup=1&zones=11",
-        expect.objectContaining({
-          method: "GET",
-          headers: {
-            Accept: "*/*",
-            "Accept-Encoding": "gzip, deflate",
-          },
-        }),
-      );
+			expect(mockFetch).toHaveBeenCalledWith(
+				"https://cms.hsl.fi/api/v1/tickets/single?language=fi&customerGroup=1&zones=11",
+				expect.objectContaining({
+					method: "GET",
+					headers: {
+						Accept: "*/*",
+						"Accept-Encoding": "gzip, deflate",
+					},
+				}),
+			);
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"https://cms.hsl.fi/api/v1/tickets/day?language=fi&customerGroup=1&zones=11",
 				expect.any(Object),
 			);
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				"https://cms.hsl.fi/api/v1/tickets/monthly?language=fi&customerGroup=1&zones=11",
-				expect.any(Object),
-			);
+			// Monthly endpoint is no longer called - calculated from season ticket
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				"https://cms.hsl.fi/api/v1/tickets/season?language=fi&customerGroup=1&zones=11&homemunicipality=helsinki&ownership=personal",
@@ -539,54 +559,37 @@ describe("PriceService", () => {
 	});
 
 	describe("continuous monthly pricing", () => {
-		it("should apply discount to monthly price for continuous monthly", async () => {
+		it("should apply discount to season monthly equivalent for continuous monthly", async () => {
 			mockCacheManager.get.mockReturnValue(null);
 
-			const monthlyPrice = 64.7;
+			const seasonPrice = 650.0;
+			const monthlyEquivalent = seasonPrice / 12;
 			const expectedContinuousPrice =
-				Math.round(monthlyPrice * 0.95 * 100) / 100;
+				Math.round(monthlyEquivalent * 0.95 * 100) / 100;
 
-			// Create a monthly response with the test price
-			const testMonthlyResponse = {
+			// Build a season response that contains only a 30-day ticket with the desired monthlyEquivalent,
+			// and no subscriptions so the implementation applies the discount fallback.
+			const seasonNoSubsResponse = {
 				tickets: [
 					{
-						id: "monthly-ticket",
+						id: "season-ticket-id",
 						ticketType: 3,
-						title: "Kuukausilippu",
-						price: monthlyPrice,
+						title: "30 vrk",
+						price: monthlyEquivalent,
 						salePrice: null,
-						pricePerDay: 2.16,
-						durationMinutes: 0,
+						pricePerDay: 0,
+						durationMinutes: null,
 						durationDays: 30,
 						customerGroup: 1,
 						zones: 11,
 						pointsOfSale: [],
-						_data: [
-							{
-								productId: "monthly-ticket",
-								productSku: "monthly-ticket-sku",
-								hslProductId: "monthly",
-								productGroup: "monthly",
-								customerGroup: "adult",
-								usage: "personal",
-								billingModel: "monthly",
-								validityArea: "AB",
-								residence: null,
-								pricingPlanId: null,
-								pricingPlanTitle: null,
-								price: monthlyPrice,
-								validFrom: "2025-01-01T00:00:00",
-								validUntil: "2027-12-31T23:59:59",
-								purchaseMethod: null,
-								durationDays: 30,
-								purchaseMethods: ["app"],
-							},
-						],
+						_data: [],
 					},
 				],
+				subscriptions: [],
 			};
 
-			// Mock all endpoints with successful responses (6 calls total)
+			// Mock all endpoints with successful responses (5 calls total - no monthly endpoint)
 			mockFetch
 				.mockResolvedValueOnce({
 					ok: true,
@@ -598,15 +601,11 @@ describe("PriceService", () => {
 				})
 				.mockResolvedValueOnce({
 					ok: true,
-					json: () => Promise.resolve(testMonthlyResponse),
+					json: () => Promise.resolve(seasonNoSubsResponse),
 				})
 				.mockResolvedValueOnce({
 					ok: true,
-					json: () => Promise.resolve(testMonthlyResponse),
-				})
-				.mockResolvedValueOnce({
-					ok: true,
-					json: () => Promise.resolve(mockSeasonResponse),
+					json: () => Promise.resolve(seasonNoSubsResponse),
 				})
 				.mockResolvedValueOnce({
 					ok: true,
@@ -662,14 +661,17 @@ describe("PriceService integration", () => {
 				ok: true,
 				json: () => Promise.resolve(mockDailyResponse),
 			})
+			// Season response
 			.mockResolvedValueOnce({
 				ok: true,
-				json: () => Promise.resolve(mockMonthlyResponse),
+				json: () => Promise.resolve(mockSeasonResponse),
 			})
+			// Saver-subscription ping
 			.mockResolvedValueOnce({
 				ok: true,
-				json: () => Promise.resolve(mockMonthlyResponse),
+				json: () => Promise.resolve(mockSaverResponse),
 			})
+			// Extra resolved values to keep call order compatibility if needed
 			.mockResolvedValueOnce({
 				ok: true,
 				json: () => Promise.resolve(mockSeasonResponse),
@@ -682,9 +684,10 @@ describe("PriceService integration", () => {
 		const result1 = await priceService.fetchTicketPrices("11", 1);
 
 		expect(result1.single).toBe(2.95);
-		expect(result1.series.price).toBe(28.8); // Hardcoded AB pricing
+		expect(result1.series10.price).toBe(28.8); // Hardcoded AB pricing
+		expect(result1.series20.price).toBe(54.4); // Hardcoded AB pricing
 		expect(result1.daily).toBe(9.5);
-		expect(result1.monthly).toBe(64.7);
+		expect(result1.monthly).toBe(107.7); // 30-day season ticket price
 		expect(mockCacheManager.set).toHaveBeenCalled();
 
 		// Second call - cache hit
@@ -694,11 +697,16 @@ describe("PriceService integration", () => {
 		expect(result2).toEqual(result1);
 
 		// Should not make additional API calls
-		expect(mockFetch).toHaveBeenCalledTimes(6); // Only from first call (no series API)
+		expect(mockFetch).toHaveBeenCalledTimes(4); // single, day, season, saver-subscription ping
 	});
 });
 
 describe("PriceService utility methods", () => {
+	beforeEach(() => {
+		vi.resetAllMocks();
+		// @ts-expect-error ensure fetch mock persists after reset
+		global.fetch = mockFetch;
+	});
 	describe("getZoneCode", () => {
 		it("should convert zone letters to correct API codes", () => {
 			expect(PriceService.getZoneCode("AB")).toBe("11");
@@ -992,7 +1000,7 @@ describe("PriceService utility methods", () => {
 
 			// 5 trips/week × 4.33 weeks/month = 21.65 trips/month, rounded up to 22
 			expect(result.monthlyCost).toBe(70.4); // 22 × 3.2
-			expect(result.annualCost).toBe(844.8); // 70.4 × 12
+			expect(result.annualCost).toBe(832); // 5 trips/week × 52 weeks = 260 annual trips × €3.2 = €832
 			expect(result.tripsPerMonth).toBe(22);
 			expect(result.totalTickets).toBe(22);
 			expect(result.calculation).toContain("5 trips/week × 4.33 weeks/month");
@@ -1005,7 +1013,7 @@ describe("PriceService utility methods", () => {
 
 			// 1 trip/week × 4.33 weeks/month = 4.33 trips/month, rounded up to 5
 			expect(result.monthlyCost).toBe(14.75); // 5 × 2.95
-			expect(result.annualCost).toBe(177.0); // 14.75 × 12
+			expect(result.annualCost).toBe(153.4); // 1 trip/week × 52 weeks = 52 annual trips × €2.95 = €153.4
 			expect(result.tripsPerMonth).toBe(5);
 			expect(result.totalTickets).toBe(5);
 		});
@@ -1016,7 +1024,7 @@ describe("PriceService utility methods", () => {
 
 			// 20 trips/week × 4.33 weeks/month = 86.6 trips/month, rounded up to 87
 			expect(result.monthlyCost).toBe(278.4); // 87 × 3.2
-			expect(result.annualCost).toBe(3340.8); // 278.4 × 12
+			expect(result.annualCost).toBe(3328); // 20 trips/week × 52 weeks = 1040 annual trips × €3.2 = €3328
 			expect(result.tripsPerMonth).toBe(87);
 			expect(result.totalTickets).toBe(87);
 		});
@@ -1038,26 +1046,26 @@ describe("PriceService utility methods", () => {
 
 			// 0.5 trips/week × 4.33 weeks/month = 2.165 trips/month, rounded up to 3
 			expect(result.monthlyCost).toBe(9.6); // 3 × 3.2
-			expect(result.annualCost).toBe(115.2); // 9.6 × 12
+			expect(result.annualCost).toBe(83.2); // 0.5 trips/week × 52 weeks = 26 annual trips × €3.2 = €83.2
 			expect(result.tripsPerMonth).toBe(3);
 			expect(result.totalTickets).toBe(3);
 		});
 
 		it("should handle edge case of very high trips (over 100)", () => {
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 			const testService = new PriceService();
 			const result = testService.calculateSingleTicketCost(150, 3.2);
 
 			// 150 trips/week × 4.33 weeks/month = 649.5 trips/month, rounded up to 650
 			expect(result.monthlyCost).toBe(2080.0); // 650 × 3.2
-			expect(result.annualCost).toBe(24960.0); // 2080.0 × 12
+			expect(result.annualCost).toBe(24960.0); // 150 trips/week × 52 weeks = 7800 annual trips × €3.2 = €24960
 			expect(result.tripsPerMonth).toBe(650);
 			expect(result.totalTickets).toBe(650);
-			
+
 			expect(consoleSpy).toHaveBeenCalledWith(
-				"Very high trip frequency: 150 trips per week. Consider monthly tickets."
+				"Very high trip frequency: 150 trips per week. Consider monthly tickets.",
 			);
-			
+
 			consoleSpy.mockRestore();
 		});
 
@@ -1067,19 +1075,20 @@ describe("PriceService utility methods", () => {
 
 			// 3 trips/week × 4.33 weeks/month = 12.99 trips/month, rounded up to 13
 			expect(result.monthlyCost).toBe(38.87); // 13 × 2.99
-			expect(result.annualCost).toBe(466.44); // 38.87 × 12
+			expect(result.annualCost).toBe(466.44); // 3 trips/week × 52 weeks = 156 annual trips × €2.99 = €466.44
 		});
 
 		it("should throw error for negative trips per week", () => {
 			const testService = new PriceService();
-			expect(() => testService.calculateSingleTicketCost(-1, 3.2))
-				.toThrow("Trips per week must be greater than or equal to 0");
+			expect(() => testService.calculateSingleTicketCost(-1, 3.2)).toThrow(
+				"Trips per week must be greater than or equal to 0",
+			);
 		});
 
 		it("should handle zero trips per week without error", () => {
 			const testService = new PriceService();
 			const result = testService.calculateSingleTicketCost(0, 3.2);
-			
+
 			expect(result.monthlyCost).toBe(0);
 			expect(result.annualCost).toBe(0);
 			expect(result.tripsPerMonth).toBe(0);
@@ -1089,14 +1098,16 @@ describe("PriceService utility methods", () => {
 
 		it("should throw error for negative ticket price", () => {
 			const testService = new PriceService();
-			expect(() => testService.calculateSingleTicketCost(5, -3.2))
-				.toThrow("Single ticket price must be greater than 0");
+			expect(() => testService.calculateSingleTicketCost(5, -3.2)).toThrow(
+				"Single ticket price must be greater than 0",
+			);
 		});
 
 		it("should throw error for zero ticket price", () => {
 			const testService = new PriceService();
-			expect(() => testService.calculateSingleTicketCost(5, 0))
-				.toThrow("Single ticket price must be greater than 0");
+			expect(() => testService.calculateSingleTicketCost(5, 0)).toThrow(
+				"Single ticket price must be greater than 0",
+			);
 		});
 	});
 
@@ -1156,6 +1167,385 @@ describe("PriceService utility methods", () => {
 
 			expect(result.recommendation).toBe("monthly");
 			expect(result.singleCost).toBeGreaterThan(result.monthlyCost);
+		});
+	});
+
+	describe("calculateSeriesTicketCost", () => {
+		it("should calculate series ticket cost for typical usage", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 14 };
+			const result = testService.calculateSeriesTicketCost(5, seriesTicket);
+
+			// 5 trips/week × 4.33 weeks/month = 21.65 trips/month, rounded up to 22
+			// 14 days = 2 weeks, so usable journeys per pack = min(10, 5 × 2) = 10
+			// effectiveUsable = max(1, 10) = 10
+			// Tickets needed = ceil(22 / 10) = 3
+			expect(result.ticketsNeeded).toBe(3);
+			expect(result.monthlyCost).toBe(37.5); // 3 × 12.5
+			expect(result.annualCost).toBe(325); // 26 annual tickets needed × 12.5 = 325 (based on 260 annual trips ÷ 10 effective usable per pack)
+			expect(result.journeysWasted).toBe(0); // (3 × 10) - (3 × 10) = 0
+			expect(result.calculation).toContain("3× series");
+		});
+
+		it("should handle high trip frequency with series tickets", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 14 };
+			const result = testService.calculateSeriesTicketCost(20, seriesTicket);
+
+			// 20 trips/week × 4.33 weeks/month = 86.6 trips/month, rounded up to 87
+			// 14 days = 2 weeks, so usable journeys per pack = min(10, 20 × 2) = 10
+			// Tickets needed = ceil(87 / 10) = 9
+			expect(result.ticketsNeeded).toBe(9);
+			expect(result.monthlyCost).toBe(112.5); // 9 × 12.5
+			expect(result.annualCost).toBe(1300); // 104 annual tickets needed × 12.5 = 1300 (based on 1040 annual trips ÷ 10 effective usable per pack)
+		});
+
+		it("should handle low trip frequency efficiently", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 14 };
+			const result = testService.calculateSeriesTicketCost(1, seriesTicket);
+
+			// 1 trip/week × 4.33 weeks/month = 4.33 trips/month, rounded up to 5
+			// 14 days = 2 weeks, so usable journeys per pack = min(10, 1 × 2) = 2
+			// Tickets needed = ceil(5 / 2) = 3
+			expect(result.ticketsNeeded).toBe(3);
+			expect(result.monthlyCost).toBe(37.5); // 3 × 12.5
+		});
+
+		it("should handle zero trips per week", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 14 };
+			const result = testService.calculateSeriesTicketCost(0, seriesTicket);
+
+			expect(result.monthlyCost).toBe(0);
+			expect(result.annualCost).toBe(0);
+			expect(result.ticketsNeeded).toBe(0);
+			expect(result.journeysWasted).toBe(0);
+			expect(result.calculation).toBe("No trips - no cost");
+		});
+
+		it("should warn about significant waste when validity limits cause waste", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 7 }; // Only 1 week validity
+			const result = testService.calculateSeriesTicketCost(2, seriesTicket);
+
+			// 2 trips/week × 4.33 weeks/month = 8.66 trips/month, rounded up to 9
+			// 7 days = 1 week, so usable journeys per pack = min(10, 2 × 1) = 2
+			// effectiveUsable = max(1, 2) = 2
+			// Tickets needed = ceil(9 / 2) = 5
+			// Total capacity = 5 × 10 = 50, usable = 5 × 2 = 10, waste = 40
+			// Waste ratio = 40/50 = 80% ≥ 20%
+			expect(result.wasteWarning).toBeDefined();
+			expect(result.wasteWarning).toContain("Significant waste expected");
+			expect(result.journeysWasted).toBe(40);
+		});
+
+		it("should not warn about waste when usage is efficient", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 30 }; // 4+ weeks validity
+			const result = testService.calculateSeriesTicketCost(5, seriesTicket);
+
+			// 5 trips/week × 4.33 weeks/month = 21.65 trips/month, rounded up to 22
+			// 30 days = 4.3 weeks, so usable journeys per pack = min(10, 5 × 4.3) = 10
+			// effectiveUsable = max(1, 10) = 10
+			// Tickets needed = ceil(22 / 10) = 3
+			// Total capacity = 3 × 10 = 30, usable = 3 × 10 = 30, waste = 0
+			// Waste ratio = 0/30 = 0% < 20%, so no warning
+			expect(result.wasteWarning).toBeUndefined();
+			expect(result.journeysWasted).toBe(0);
+		});
+
+		it("should throw error for negative trips per week", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 14 };
+			expect(() =>
+				testService.calculateSeriesTicketCost(-1, seriesTicket),
+			).toThrow("Trips per week must be greater than or equal to 0");
+		});
+
+		it("should throw error for invalid series ticket configuration", () => {
+			const testService = new PriceService();
+			expect(() =>
+				testService.calculateSeriesTicketCost(5, {
+					price: 0,
+					journeys: 10,
+					validityDays: 14,
+				}),
+			).toThrow("Invalid series ticket configuration");
+			expect(() =>
+				testService.calculateSeriesTicketCost(5, {
+					price: 12.5,
+					journeys: 0,
+					validityDays: 14,
+				}),
+			).toThrow("Invalid series ticket configuration");
+			expect(() =>
+				testService.calculateSeriesTicketCost(5, {
+					price: 12.5,
+					journeys: 10,
+					validityDays: 0,
+				}),
+			).toThrow("Invalid series ticket configuration");
+		});
+
+		it("should handle edge case of very high trip frequency", () => {
+			const testService = new PriceService();
+			const seriesTicket = { price: 12.5, journeys: 10, validityDays: 14 };
+			const result = testService.calculateSeriesTicketCost(100, seriesTicket);
+
+			// 100 trips/week × 4.33 weeks/month = 433 trips/month
+			// 14 days = 2 weeks, so usable journeys per pack = min(10, 100 × 2) = 10
+			// Tickets needed = ceil(433 / 10) = 44
+			expect(result.ticketsNeeded).toBe(44);
+			expect(result.monthlyCost).toBe(550); // 44 × 12.5
+			expect(result.annualCost).toBe(6500); // 520 annual tickets needed × 12.5 = 6500 (based on 5200 annual trips ÷ 10 effective usable per pack)
+		});
+	});
+
+	describe("calculateMonthlyTicketCost", () => {
+		it("should calculate monthly ticket cost correctly", () => {
+			const testService = new PriceService();
+			const result = testService.calculateMonthlyTicketCost(64.7);
+
+			expect(result.monthlyCost).toBe(64.7);
+			expect(result.annualCost).toBe(776.4); // 64.7 × 12
+			expect(result.calculation).toBe("Fixed €64.7/month");
+		});
+
+		it("should handle decimal prices with proper rounding", () => {
+			const testService = new PriceService();
+			const result = testService.calculateMonthlyTicketCost(64.75);
+
+			expect(result.monthlyCost).toBe(64.75);
+			expect(result.annualCost).toBe(777); // 64.75 × 12
+		});
+
+		it("should throw error for negative price", () => {
+			const testService = new PriceService();
+			expect(() => testService.calculateMonthlyTicketCost(-64.7)).toThrow(
+				"Monthly ticket price must be greater than 0",
+			);
+		});
+
+		it("should throw error for zero price", () => {
+			const testService = new PriceService();
+			expect(() => testService.calculateMonthlyTicketCost(0)).toThrow(
+				"Monthly ticket price must be greater than 0",
+			);
+		});
+	});
+
+	describe("calculateContinuousMonthlyTicketCost", () => {
+		it("should calculate continuous monthly with default discount", () => {
+			const testService = new PriceService();
+			const result = testService.calculateContinuousMonthlyTicketCost(64.7);
+
+			// Default 5% discount: 64.7 × 0.95 = 61.465, rounded to 61.47
+			expect(result.monthlyCost).toBe(61.47);
+			expect(result.annualCost).toBe(737.64); // 61.47 × 12
+			expect(result.calculation).toContain("5% discount");
+		});
+
+		it("should use provided continuous monthly price when available", () => {
+			const testService = new PriceService();
+			const result = testService.calculateContinuousMonthlyTicketCost(
+				64.7,
+				58.0,
+			);
+
+			expect(result.monthlyCost).toBe(58.0);
+			expect(result.annualCost).toBe(696); // 58.0 × 12
+			expect(result.calculation).toBe("Fixed €58/month");
+		});
+
+		it("should handle custom discount ratio", () => {
+			const testService = new PriceService();
+			const result = testService.calculateContinuousMonthlyTicketCost(
+				64.7,
+				undefined,
+				0.1,
+			); // 10% discount
+
+			// 10% discount: 64.7 × 0.9 = 58.23, rounded to 58.23
+			expect(result.monthlyCost).toBe(58.23);
+			expect(result.annualCost).toBe(698.76); // 58.23 × 12
+			expect(result.calculation).toContain("10% discount");
+		});
+
+		it("should prioritize provided price over calculated discount", () => {
+			const testService = new PriceService();
+			const result = testService.calculateContinuousMonthlyTicketCost(
+				64.7,
+				58.0,
+				0.15,
+			); // 15% discount
+
+			// Should use provided price 55.0, not calculated 64.7 × 0.85 = 54.995
+			expect(result.monthlyCost).toBe(58.0);
+			expect(result.calculation).toBe("Fixed €58/month");
+		});
+
+		it("should throw error for negative price", () => {
+			const testService = new PriceService();
+			expect(() =>
+				testService.calculateContinuousMonthlyTicketCost(-64.7),
+			).toThrow("Monthly ticket price must be greater than 0");
+		});
+
+		it("should throw error for zero price", () => {
+			const testService = new PriceService();
+			expect(() => testService.calculateContinuousMonthlyTicketCost(0)).toThrow(
+				"Monthly ticket price must be greater than 0",
+			);
+		});
+	});
+
+	describe("findOptimalOption", () => {
+		it("should find optimal option among all ticket types", () => {
+			const testService = new PriceService();
+			const prices = {
+				single: 3.2,
+				series10: { price: 12.5, journeys: 10, validityDays: 14 },
+				season: 107.7,
+				continuousMonthly: 58.0,
+			};
+			const result = testService.findOptimalOption(5, prices);
+
+			// Single: 5 trips/week × 4.33 weeks/month = 21.65 trips/month, rounded up to 22
+			// Single cost: 22 × 3.2 = 70.4
+			// Series: 22 trips/month, usable 10 per pack, need 3 tickets = 3 × 12.5 = 37.5
+			// Season: 107.70
+			// Continuous: 58.0
+			// Optimal should be series10 at 37.5
+			expect(result.optimal).toBe("series10");
+			expect(result.single.monthlyCost).toBe(70.4);
+			expect(result.series10!.monthlyCost).toBe(37.5);
+			expect(result.season.monthlyCost).toBe(107.7);
+			expect(result.continuousMonthly.monthlyCost).toBe(58.0);
+		});
+
+		it("should handle case where single tickets are cheapest", () => {
+			const testService = new PriceService();
+			const prices = {
+				single: 1.0, // Very cheap single tickets
+				series10: { price: 12.5, journeys: 10, validityDays: 14 },
+				season: 107.7,
+				continuousMonthly: 58.0,
+			};
+			const result = testService.findOptimalOption(2, prices);
+
+			// Single: 2 trips/week × 4.33 weeks/month = 8.66 trips/month, rounded up to 9
+			// Single cost: 9 × 1.0 = 9.0
+			// Series: 9 trips/month, usable 10 per pack, need 1 ticket = 1 × 12.5 = 12.5
+			// Season: 650.0/12 = 54.17
+			// Continuous: 58.0
+			// Optimal should be single at 9.0
+			expect(result.optimal).toBe("single");
+			expect(result.single.monthlyCost).toBe(9.0);
+		});
+
+		it("should handle case where season tickets are cheapest", () => {
+			const testService = new PriceService();
+			const prices = {
+				single: 5.0, // Expensive single tickets
+				series10: { price: 15.0, journeys: 5, validityDays: 7 }, // Expensive series
+				season: 240.0, // Cheap season (240/12 = 20.0/month)
+				continuousMonthly: 18.0,
+			};
+			const result = testService.findOptimalOption(10, prices);
+
+			// Single: 10 trips/week × 4.33 weeks/month = 43.3 trips/month, rounded up to 44
+			// Single cost: 44 × 5.0 = 220.0
+			// Series: 44 trips/month, usable 5 per pack, need 9 tickets = 9 × 15.0 = 135.0
+			// Season: 240.0/12 = 20.0
+			// Continuous: 18.0
+			// Optimal should be continuous monthly at 18.0
+			expect(result.optimal).toBe("continuousMonthly");
+			expect(result.continuousMonthly.monthlyCost).toBe(18.0);
+		});
+
+		it("should handle zero trips per week", () => {
+			const testService = new PriceService();
+			const prices = {
+				single: 3.2,
+				series10: { price: 12.5, journeys: 10, validityDays: 14 },
+				season: 107.7,
+				continuousMonthly: 58.0,
+			};
+			const result = testService.findOptimalOption(0, prices);
+
+			// All costs should be 0 for zero trips
+			expect(result.single.monthlyCost).toBe(0);
+			expect(result.series10!.monthlyCost).toBe(0);
+			expect(result.season.monthlyCost).toBe(107.7); // Season is fixed price (650/12)
+			expect(result.continuousMonthly.monthlyCost).toBe(58.0); // Continuous is fixed price
+			// Optimal should be single (0 cost) or series (0 cost), but single is first in array
+			expect(result.optimal).toBe("single");
+		});
+
+		it("should handle tie-breaking scenarios by selecting first option", () => {
+			const testService = new PriceService();
+			const prices = {
+				single: 3.0,
+				series10: { price: 3.0, journeys: 1, validityDays: 30 }, // Same price as single
+				season: 36.0, // Same price (36/12 = 3.0/month)
+				continuousMonthly: 3.0, // Same price
+			};
+			const result = testService.findOptimalOption(1, prices);
+
+			// Single: 1 trip/week × 4.33 weeks/month = 4.33 trips/month, rounded up to 5
+			// Single cost: 5 × 3.0 = 15.0
+			// Series: 5 trips/month, usable 1 per pack, need 5 tickets = 5 × 3.0 = 15.0
+			// Season: 36.0 (fixed)
+			// Continuous: 3.0 (fixed)
+			expect(result.single.monthlyCost).toBe(15.0);
+			expect(result.series10!.monthlyCost).toBe(15.0);
+			expect(result.season.monthlyCost).toBe(36.0);
+			expect(result.continuousMonthly.monthlyCost).toBe(3.0);
+			// Continuous monthly is cheapest at 3.0 vs season at 36.0, single/series at 15.0
+			expect(result.optimal).toBe("continuousMonthly");
+		});
+
+		it("should provide complete calculation details for all options", () => {
+			const testService = new PriceService();
+			const prices = {
+				single: 3.2,
+				series10: { price: 12.5, journeys: 10, validityDays: 14 },
+				season: 107.7,
+				continuousMonthly: 58.0,
+			};
+			const result = testService.findOptimalOption(5, prices);
+
+			// Verify all calculation details are provided
+			expect(result.single.calculation).toContain(
+				"5 trips/week × 4.33 weeks/month",
+			);
+			expect(result.series10!.calculation).toContain("series");
+			expect(result.season.calculation).toContain("30-day ticket");
+			expect(result.continuousMonthly.calculation).toContain("Fixed €58/month");
+		});
+
+		it("should handle very high trip frequencies", () => {
+			const testService = new PriceService();
+			const prices = {
+				single: 3.2,
+				series10: { price: 12.5, journeys: 10, validityDays: 14 },
+				season: 107.7,
+				continuousMonthly: 58.0,
+			};
+			const result = testService.findOptimalOption(100, prices);
+
+			// Single: 100 trips/week × 4.33 weeks/month = 433 trips/month, rounded up to 433
+			// Single cost: 433 × 3.2 = 1385.6
+			// Series: 433 trips/month, usable 10 per pack, need 44 tickets = 44 × 12.5 = 550
+			// Season: 107.70
+			// Continuous: 58.0
+			// Season: 107.70, Continuous: 58.0 - Optimal should be continuous monthly
+			expect(result.optimal).toBe("continuousMonthly");
+			expect(result.single.monthlyCost).toBe(1385.6);
+			expect(result.series10!.monthlyCost).toBe(550);
+			expect(result.season.monthlyCost).toBe(107.7);
+			expect(result.continuousMonthly.monthlyCost).toBe(58.0);
 		});
 	});
 });

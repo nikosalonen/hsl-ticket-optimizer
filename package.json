@@ -28,5 +28,8 @@
     "helsinki"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "^4.5.0"
+  }
 }
