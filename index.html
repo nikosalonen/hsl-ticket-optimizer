@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSL Ticket Optimizer</title>
+    <meta name="description" content="Find the most cost-effective HSL public transport ticket option based on your travel patterns">
+    <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>HSL Ticket Optimizer</h1>
+            <p>Find the most cost-effective ticket option for your travel needs</p>
+        </header>
+        
+        <main>
+            <form id="ticket-form" class="ticket-form">
+                <div class="form-section">
+                    <h2>Select Ticket Types to Compare</h2>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" name="ticketTypes" value="single" checked>
+                            Single-use tickets
+                        </label>
+                        <label>
+                            <input type="checkbox" name="ticketTypes" value="series" checked>
+                            Series tickets (sarjalippu)
+                        </label>
+                        <label>
+                            <input type="checkbox" name="ticketTypes" value="monthly" checked>
+                            Monthly tickets
+                        </label>
+                        <label>
+                            <input type="checkbox" name="ticketTypes" value="continuousMonthly" checked>
+                            Continuous monthly orders
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label for="zones">Travel Zones:</label>
+                    <select id="zones" name="zones" required>
+                        <option value="">Select zones</option>
+                        <option value="12">AB - Helsinki, Espoo, Vantaa, Kauniainen</option>
+                        <option value="123">ABC - AB + Kerava, Kirkkonummi, Sipoo</option>
+                        <option value="1234">ABCD - ABC + Tuusula, Nurmijärvi</option>
+                        <option value="234">BCD - Espoo, Vantaa + outer areas</option>
+                        <option value="34">CD - Outer areas only</option>
+                        <option value="4">D - Furthest zones</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <label for="tripsPerWeek">Trips per week:</label>
+                    <input type="number" id="tripsPerWeek" name="tripsPerWeek" min="1" max="50" required>
+                    <small>Enter number of one-way trips (1-50)</small>
+                </div>
+
+                <button type="submit" class="calculate-btn">Calculate Best Option</button>
+            </form>
+
+            <div id="loading" class="loading hidden">
+                <p>Fetching current HSL prices...</p>
+            </div>
+
+            <div id="error" class="error hidden">
+                <p class="error-message"></p>
+            </div>
+
+            <div id="results" class="results hidden">
+                <h2>Cost Comparison Results</h2>
+                <div id="results-content"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Prices fetched from HSL API. Results are estimates for comparison purposes.</p>
+        </footer>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

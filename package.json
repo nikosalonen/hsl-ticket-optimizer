@@ -1,0 +1,29 @@
+{
+  "name": "hsl-ticket-optimizer",
+  "version": "1.0.0",
+  "description": "HSL public transport ticket cost optimizer",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "vite": "^7.1.2",
+    "vitest": "^3.2.4"
+  },
+  "keywords": [
+    "hsl",
+    "public-transport",
+    "ticket",
+    "optimizer",
+    "helsinki"
+  ],
+  "author": "",
+  "license": "MIT"
+}
