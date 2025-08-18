@@ -58,30 +58,12 @@ function hideResults() {
 }
 
 function normalizeZonesInput(rawValue: string): string {
-	// Map legacy numeric values from the HTML select to API zone codes
-	const legacyMap: Record<string, string> = {
-		"12": "11", // AB
-		"123": "12", // ABC
-		"1234": "13", // ABCD
-		"234": "22", // BCD
-		"34": "31", // CD
-		"4": "40", // D
-	};
-
-	if (legacyMap[rawValue]) return legacyMap[rawValue];
-
-	// If user-provided letters (e.g., AB, ABC), convert using helper
+	// Accept zone letters from UI and convert to API zone code via helper
 	const letters = rawValue.trim();
 	if (/^[A-D]+$/i.test(letters)) {
-		try {
-			return PriceService.getZoneCode(letters.toUpperCase());
-		} catch {
-			return rawValue;
-		}
+		return PriceService.getZoneCode(letters.toUpperCase());
 	}
-
-	// Otherwise assume already in API format (e.g., "11", "12", ...)
-	return rawValue;
+	return letters;
 }
 
 type OptimalResult = ReturnType<typeof priceService.findOptimalOption>;
@@ -251,11 +233,16 @@ function renderCostComparisonChart(result: OptimalResult) {
 	}
 
 	const labels: string[] = ["Single", "Season", "Continuous Monthly"];
+	const continuousMonthlyValue =
+		Number.isFinite(result.continuousMonthly?.monthlyCost)
+			? result.continuousMonthly.monthlyCost
+			: 0;
 	const data: number[] = [
-		result.single.monthlyCost,
-		result.season.monthlyCost,
-		result.continuousMonthly.monthlyCost,
+		Number(result.single.monthlyCost) || 0,
+		Number(result.season.monthlyCost) || 0,
+		continuousMonthlyValue,
 	];
+	console.log("[Chart] Cost comparison labels/data", { labels, data });
 	if (result.series10) {
 		labels.push("10-trip series");
 		data.push(result.series10.monthlyCost);
@@ -281,10 +268,7 @@ function renderCostComparisonChart(result: OptimalResult) {
 		},
 		options: {
 			responsive: true,
-			plugins: {
-				legend: { display: false },
-				tooltip: { enabled: true },
-			},
+			plugins: { legend: { display: false }, tooltip: { enabled: true } },
 			scales: {
 				y: {
 					beginAtZero: true,
@@ -351,20 +335,20 @@ async function renderTripsCostChart(
 		{
 			label: "Single",
 			data: singleCosts,
-			borderColor: "#888",
-			backgroundColor: "transparent",
+			borderColor: "#888888",
+			backgroundColor: "#888888",
 		},
 		{
 			label: "Season",
 			data: seasonCosts,
 			borderColor: "#0066cc",
-			backgroundColor: "transparent",
+			backgroundColor: "#0066cc",
 		},
 		{
 			label: "Continuous",
 			data: contMonthlyCosts,
 			borderColor: "#2e7d32",
-			backgroundColor: "transparent",
+			backgroundColor: "#2e7d32",
 		},
 	];
 	if (series10Costs.length)
@@ -372,14 +356,14 @@ async function renderTripsCostChart(
 			label: "Series 10",
 			data: series10Costs,
 			borderColor: "#9c27b0",
-			backgroundColor: "transparent",
+			backgroundColor: "#9c27b0",
 		});
 	if (series20Costs.length)
 		datasets.push({
 			label: "Series 20",
 			data: series20Costs,
 			borderColor: "#ff9800",
-			backgroundColor: "transparent",
+			backgroundColor: "#ff9800",
 		});
 
 	tripsCostChart = new Chart(ctx, {
@@ -392,7 +376,22 @@ async function renderTripsCostChart(
 			responsive: true,
 			maintainAspectRatio: true,
 			aspectRatio: 2.5,
-			plugins: { legend: { position: "top" as const } },
+			plugins: {
+				legend: { position: "top" as const },
+				tooltip: {
+					usePointStyle: true,
+					callbacks: {
+						labelColor: (ctx) => {
+							const ds = ctx.dataset as unknown as { borderColor?: string };
+							const color = typeof ds?.borderColor === "string" ? ds.borderColor : "#666";
+							return { borderColor: color, backgroundColor: color } as unknown as {
+								borderColor: string;
+								backgroundColor: string;
+							};
+						},
+					},
+				},
+			},
 			interaction: { intersect: false, mode: "index" as const },
 			scales: {
 				x: { title: { display: true, text: "Trips per week" } },

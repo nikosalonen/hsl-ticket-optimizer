@@ -332,7 +332,7 @@ describe("PriceService", () => {
 			}); // Hardcoded AB pricing
 			expect(result.daily).toBe(9.5);
 			expect(result.monthly).toBe(107.7); // 30-day season ticket price
-			expect(result.continuousMonthly).toBe(107.7); // Regular continuous subscription price
+			expect(result.continuousMonthly).toBe(89.8); // Saver subscription (12m commitment)
 			expect(result.season).toEqual({
 				price: 107.7,
 				durationDays: 30,

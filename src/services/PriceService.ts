@@ -123,9 +123,11 @@ export class PriceService {
 				}
 			}
 
-			// Prefer subscription values; if continuous not available, apply default discount to monthly
+			// Prefer saver subscription (12m commitment) for continuous monthly; then regular continuous; else discounted monthly
 			const continuousMonthlyFinal =
-				continuousMonthlyFromSubs ?? Math.round(monthlyEquivalent * 0.95 * 100) / 100;
+				saverSubscriptionFromSubs ??
+				continuousMonthlyFromSubs ??
+				Math.round(monthlyEquivalent * 0.95 * 100) / 100;
 
 			const seriesOptions = this.getSeriesTicketOptions(zones);
 			const series10 = seriesOptions.find((ticket) => ticket.journeys === 10);
