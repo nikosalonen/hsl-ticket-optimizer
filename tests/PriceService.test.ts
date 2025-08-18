@@ -984,4 +984,178 @@ describe("PriceService utility methods", () => {
 			expect(PriceService.parseZoneCode("ABC")).toBe("12");
 		});
 	});
+
+	describe("calculateSingleTicketCost", () => {
+		it("should calculate correct costs for typical trip frequencies", () => {
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(5, 3.2);
+
+			// 5 trips/week × 4.33 weeks/month = 21.65 trips/month, rounded up to 22
+			expect(result.monthlyCost).toBe(70.4); // 22 × 3.2
+			expect(result.annualCost).toBe(844.8); // 70.4 × 12
+			expect(result.tripsPerMonth).toBe(22);
+			expect(result.totalTickets).toBe(22);
+			expect(result.calculation).toContain("5 trips/week × 4.33 weeks/month");
+			expect(result.calculation).toContain("€3.2 = €70.4/month");
+		});
+
+		it("should handle low trip frequencies correctly", () => {
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(1, 2.95);
+
+			// 1 trip/week × 4.33 weeks/month = 4.33 trips/month, rounded up to 5
+			expect(result.monthlyCost).toBe(14.75); // 5 × 2.95
+			expect(result.annualCost).toBe(177.0); // 14.75 × 12
+			expect(result.tripsPerMonth).toBe(5);
+			expect(result.totalTickets).toBe(5);
+		});
+
+		it("should handle high trip frequencies correctly", () => {
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(20, 3.2);
+
+			// 20 trips/week × 4.33 weeks/month = 86.6 trips/month, rounded up to 87
+			expect(result.monthlyCost).toBe(278.4); // 87 × 3.2
+			expect(result.annualCost).toBe(3340.8); // 278.4 × 12
+			expect(result.tripsPerMonth).toBe(87);
+			expect(result.totalTickets).toBe(87);
+		});
+
+		it("should handle edge case of 0 trips per week", () => {
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(0, 3.2);
+
+			expect(result.monthlyCost).toBe(0);
+			expect(result.annualCost).toBe(0);
+			expect(result.tripsPerMonth).toBe(0);
+			expect(result.totalTickets).toBe(0);
+			expect(result.calculation).toBe("No trips - no cost");
+		});
+
+		it("should handle edge case of very low trips (less than 1)", () => {
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(0.5, 3.2);
+
+			// 0.5 trips/week × 4.33 weeks/month = 2.165 trips/month, rounded up to 3
+			expect(result.monthlyCost).toBe(9.6); // 3 × 3.2
+			expect(result.annualCost).toBe(115.2); // 9.6 × 12
+			expect(result.tripsPerMonth).toBe(3);
+			expect(result.totalTickets).toBe(3);
+		});
+
+		it("should handle edge case of very high trips (over 100)", () => {
+			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(150, 3.2);
+
+			// 150 trips/week × 4.33 weeks/month = 649.5 trips/month, rounded up to 650
+			expect(result.monthlyCost).toBe(2080.0); // 650 × 3.2
+			expect(result.annualCost).toBe(24960.0); // 2080.0 × 12
+			expect(result.tripsPerMonth).toBe(650);
+			expect(result.totalTickets).toBe(650);
+			
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"Very high trip frequency: 150 trips per week. Consider monthly tickets."
+			);
+			
+			consoleSpy.mockRestore();
+		});
+
+		it("should round costs to 2 decimal places", () => {
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(3, 2.99);
+
+			// 3 trips/week × 4.33 weeks/month = 12.99 trips/month, rounded up to 13
+			expect(result.monthlyCost).toBe(38.87); // 13 × 2.99
+			expect(result.annualCost).toBe(466.44); // 38.87 × 12
+		});
+
+		it("should throw error for negative trips per week", () => {
+			const testService = new PriceService();
+			expect(() => testService.calculateSingleTicketCost(-1, 3.2))
+				.toThrow("Trips per week must be greater than or equal to 0");
+		});
+
+		it("should handle zero trips per week without error", () => {
+			const testService = new PriceService();
+			const result = testService.calculateSingleTicketCost(0, 3.2);
+			
+			expect(result.monthlyCost).toBe(0);
+			expect(result.annualCost).toBe(0);
+			expect(result.tripsPerMonth).toBe(0);
+			expect(result.totalTickets).toBe(0);
+			expect(result.calculation).toBe("No trips - no cost");
+		});
+
+		it("should throw error for negative ticket price", () => {
+			const testService = new PriceService();
+			expect(() => testService.calculateSingleTicketCost(5, -3.2))
+				.toThrow("Single ticket price must be greater than 0");
+		});
+
+		it("should throw error for zero ticket price", () => {
+			const testService = new PriceService();
+			expect(() => testService.calculateSingleTicketCost(5, 0))
+				.toThrow("Single ticket price must be greater than 0");
+		});
+	});
+
+	describe("getTicketRecommendation", () => {
+		it("should recommend single tickets for low trip frequencies", () => {
+			const testService = new PriceService();
+			const result = testService.getTicketRecommendation(2, 3.2, 64.7);
+
+			expect(result.recommendation).toBe("single");
+			expect(result.reasoning).toContain("Single tickets are cheaper");
+			expect(result.singleCost).toBeLessThan(result.monthlyCost);
+			expect(result.savings).toBe(0); // No savings with single tickets
+		});
+
+		it("should recommend monthly tickets for high trip frequencies", () => {
+			const testService = new PriceService();
+			const result = testService.getTicketRecommendation(25, 3.2, 64.7);
+
+			expect(result.recommendation).toBe("monthly");
+			expect(result.reasoning).toContain("Monthly ticket saves");
+			expect(result.singleCost).toBeGreaterThan(result.monthlyCost);
+			expect(result.savings).toBeGreaterThan(0);
+		});
+
+		it("should calculate correct break-even point", () => {
+			const testService = new PriceService();
+			const result = testService.getTicketRecommendation(10, 3.2, 64.7);
+
+			// Break-even: 64.7 / 3.2 = 20.22, rounded up to 21
+			expect(result.breakEvenTrips).toBe(21);
+		});
+
+		it("should handle edge case of no trips", () => {
+			const testService = new PriceService();
+			const result = testService.getTicketRecommendation(0, 3.2, 64.7);
+
+			expect(result.recommendation).toBe("single");
+			expect(result.reasoning).toBe("No trips planned");
+			expect(result.singleCost).toBe(0);
+			expect(result.savings).toBe(0);
+		});
+
+		it("should provide detailed reasoning for recommendations", () => {
+			const testService = new PriceService();
+			const result = testService.getTicketRecommendation(30, 3.2, 64.7);
+
+			expect(result.reasoning).toContain("Monthly ticket saves");
+			expect(result.reasoning).toContain("Break-even at");
+			expect(result.savings).toBeGreaterThan(0);
+		});
+
+		it("should handle exact break-even scenarios", () => {
+			const testService = new PriceService();
+			// 20 trips/week × 4.33 weeks/month = 86.6 trips/month, rounded up to 87
+			// 87 × 3.2 = 278.4, which is greater than 64.7
+			const result = testService.getTicketRecommendation(20, 3.2, 64.7);
+
+			expect(result.recommendation).toBe("monthly");
+			expect(result.singleCost).toBeGreaterThan(result.monthlyCost);
+		});
+	});
 });

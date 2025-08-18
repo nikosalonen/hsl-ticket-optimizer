@@ -816,6 +816,117 @@ export class PriceService {
 	static parseZoneCode(zoneLetters: string): string {
 		return PriceService.getZoneCode(zoneLetters);
 	}
+
+	/**
+	 * Calculate single ticket cost for given trip frequency
+	 * @param tripsPerWeek Number of trips per week
+	 * @param singleTicketPrice Price of a single ticket
+	 * @returns Object with monthly and annual costs, plus calculation details
+	 */
+	calculateSingleTicketCost(tripsPerWeek: number, singleTicketPrice: number): {
+		monthlyCost: number;
+		annualCost: number;
+		calculation: string;
+		tripsPerMonth: number;
+		totalTickets: number;
+	} {
+		// Validate inputs
+		if (tripsPerWeek < 0) {
+			throw new Error('Trips per week must be greater than or equal to 0');
+		}
+		if (singleTicketPrice <= 0) {
+			throw new Error('Single ticket price must be greater than 0');
+		}
+
+		// Handle edge case of no trips
+		if (tripsPerWeek === 0) {
+			return {
+				monthlyCost: 0,
+				annualCost: 0,
+				calculation: 'No trips - no cost',
+				tripsPerMonth: 0,
+				totalTickets: 0
+			};
+		}
+
+		if (tripsPerWeek > 100) {
+			// For very high trip frequencies, warn about potential impracticality
+			console.warn(`Very high trip frequency: ${tripsPerWeek} trips per week. Consider monthly tickets.`);
+		}
+
+		// Calculate trips per month (4.33 weeks per month)
+		const WEEKS_PER_MONTH = 4.33;
+		const tripsPerMonth = Math.ceil(tripsPerWeek * WEEKS_PER_MONTH);
+		
+		// Calculate total tickets needed (round up to ensure coverage)
+		const totalTickets = tripsPerMonth;
+		
+		// Calculate costs
+		const monthlyCost = Math.round((totalTickets * singleTicketPrice) * 100) / 100;
+		const annualCost = Math.round((monthlyCost * 12) * 100) / 100;
+
+		// Create calculation explanation
+		const calculation = `${tripsPerWeek} trips/week × ${WEEKS_PER_MONTH} weeks/month = ${tripsPerMonth.toFixed(1)} trips/month × €${singleTicketPrice} = €${monthlyCost}/month`;
+
+		return {
+			monthlyCost,
+			annualCost,
+			calculation,
+			tripsPerMonth,
+			totalTickets
+		};
+	}
+
+	/**
+	 * Get optimal ticket recommendation based on trip frequency
+	 * @param tripsPerWeek Number of trips per week
+	 * @param singleTicketPrice Price of a single ticket
+	 * @param monthlyTicketPrice Price of monthly ticket
+	 * @returns Recommendation with reasoning
+	 */
+	getTicketRecommendation(
+		tripsPerWeek: number, 
+		singleTicketPrice: number, 
+		monthlyTicketPrice: number
+	): {
+		recommendation: 'single' | 'monthly' | 'series';
+		reasoning: string;
+		singleCost: number;
+		monthlyCost: number;
+		savings: number;
+		breakEvenTrips: number;
+	} {
+		const singleTicketCost = this.calculateSingleTicketCost(tripsPerWeek, singleTicketPrice);
+		const monthlyCost = monthlyTicketPrice;
+		
+		// Calculate break-even point
+		const breakEvenTrips = Math.ceil(monthlyCost / singleTicketPrice);
+		
+		// Determine recommendation
+		let recommendation: 'single' | 'monthly' | 'series';
+		let reasoning: string;
+		
+		if (tripsPerWeek === 0) {
+			recommendation = 'single';
+			reasoning = 'No trips planned';
+		} else if (singleTicketCost.monthlyCost <= monthlyCost) {
+			recommendation = 'single';
+			reasoning = `Single tickets are cheaper (€${singleTicketCost.monthlyCost}/month vs €${monthlyCost}/month)`;
+		} else {
+			recommendation = 'monthly';
+			const savings = singleTicketCost.monthlyCost - monthlyCost;
+			reasoning = `Monthly ticket saves €${savings.toFixed(2)}/month. Break-even at ${breakEvenTrips} trips/month`;
+		}
+
+		return {
+			recommendation,
+			reasoning,
+			singleCost: singleTicketCost.monthlyCost,
+			monthlyCost,
+			savings: Math.max(0, singleTicketCost.monthlyCost - monthlyCost),
+			breakEvenTrips
+		};
+	}
 }
 
 // Export singleton instance
