@@ -38,12 +38,12 @@ graph TB
 
 ### Technology Stack
 
-- **Frontend Framework**: Vanilla JavaScript (ES6+) with modern browser APIs
+- **Frontend Framework**: TypeScript with modern browser APIs (strict type checking enabled)
 - **Styling**: CSS3 with CSS Grid/Flexbox for responsive layout
 - **HTTP Client**: Fetch API for HSL API integration
 - **Storage**: localStorage for price caching
 - **Testing**: Jest for unit tests, Testing Library for integration tests
-- **Build**: Vite for development and production builds
+- **Build**: Vite with TypeScript support for development and production builds
 - **Deployment**: GitHub Pages with GitHub Actions
 
 ## Components and Interfaces
@@ -52,7 +52,7 @@ graph TB
 
 Handles all HSL API interactions and price data management.
 
-```javascript
+```typescript
 interface PriceService {
   fetchTicketPrices(zones: string, customerGroup: number): Promise<TicketPrices>
   getCachedPrices(zones: string): TicketPrices | null
@@ -78,7 +78,7 @@ interface TicketPrices {
 
 Core business logic for cost calculations and comparisons.
 
-```javascript
+```typescript
 interface CalculationEngine {
   calculateMonthlyCosts(input: UserInput, prices: TicketPrices): CalculationResults
   calculateSingleTicketCost(tripsPerWeek: number, singlePrice: number): number
@@ -118,7 +118,7 @@ interface SeriesCalculation extends CostBreakdown {
 
 Manages user input, validation, and form state.
 
-```javascript
+```typescript
 interface FormHandler {
   validateInput(input: UserInput): ValidationResult
   handleFormSubmit(event: Event): void
@@ -136,7 +136,7 @@ interface ValidationResult {
 
 Formats and displays calculation results to users.
 
-```javascript
+```typescript
 interface ResultsFormatter {
   formatResults(results: CalculationResults): HTMLElement
   formatCostBreakdown(breakdown: CostBreakdown): string
@@ -149,7 +149,7 @@ interface ResultsFormatter {
 
 Handles browser storage for price caching.
 
-```javascript
+```typescript
 interface CacheManager {
   get(key: string): any
   set(key: string, value: any, ttl: number): void
@@ -164,7 +164,7 @@ interface CacheManager {
 
 Based on HSL API structure, the responses will be normalized to:
 
-```javascript
+```typescript
 // Single ticket API response
 interface HSLSingleResponse {
   data: {
@@ -197,7 +197,7 @@ interface HSLMonthlyResponse {
 
 ### Internal Data Models
 
-```javascript
+```typescript
 interface TicketOption {
   type: 'single' | 'series' | 'monthly' | 'continuousMonthly'
   name: string
@@ -227,16 +227,21 @@ const ZONE_OPTIONS: ZoneOption[] = [
 3. **CORS Issues**: Provide clear instructions for user
 4. **Rate Limiting**: Implement exponential backoff
 
-```javascript
+```typescript
+type ErrorType = 'network' | 'cors' | 'invalid_response' | 'rate_limit';
+
 class APIError extends Error {
-  constructor(message, type, originalError) {
+  public type: ErrorType;
+  public originalError?: Error;
+
+  constructor(message: string, type: ErrorType, originalError?: Error) {
     super(message)
-    this.type = type // 'network', 'cors', 'invalid_response', 'rate_limit'
+    this.type = type
     this.originalError = originalError
   }
 }
 
-const ERROR_MESSAGES = {
+const ERROR_MESSAGES: Record<ErrorType, string> = {
   network: 'Unable to connect to HSL services. Please check your internet connection.',
   cors: 'Browser security settings are blocking the request. Please try refreshing the page.',
   invalid_response: 'Received invalid data from HSL services. Please try again later.',
@@ -246,8 +251,17 @@ const ERROR_MESSAGES = {
 
 ### Form Validation Errors
 
-```javascript
-const VALIDATION_RULES = {
+```typescript
+interface ValidationRule {
+  required: boolean;
+  min?: number;
+  max?: number;
+  type?: 'integer' | 'string';
+  validValues?: string[];
+  minSelected?: number;
+}
+
+const VALIDATION_RULES: Record<string, ValidationRule> = {
   tripsPerWeek: {
     required: true,
     min: 1,
@@ -300,17 +314,23 @@ const VALIDATION_RULES = {
 
 ### Test Data
 
-```javascript
-const MOCK_PRICES = {
+```typescript
+const MOCK_PRICES: Record<string, TicketPrices> = {
   zones12: {
     single: 2.95,
     series: { price: 27.00, journeys: 10, validityDays: 14 },
     monthly: 64.70,
-    continuousMonthly: 61.50
+    continuousMonthly: 61.50,
+    timestamp: Date.now()
   }
 }
 
-const TEST_SCENARIOS = [
+interface TestScenario {
+  tripsPerWeek: number;
+  expectedOptimal: string;
+}
+
+const TEST_SCENARIOS: TestScenario[] = [
   { tripsPerWeek: 2, expectedOptimal: 'single' },
   { tripsPerWeek: 8, expectedOptimal: 'series' },
   { tripsPerWeek: 15, expectedOptimal: 'monthly' },
@@ -370,13 +390,18 @@ jobs:
 ```
 
 ### Build Configuration
-```javascript
-// vite.config.js
-export default {
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   base: '/hsl-ticket-optimizer/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets'
+  },
+  resolve: {
+    extensions: ['.ts', '.js']
   }
-}
+})
 ```

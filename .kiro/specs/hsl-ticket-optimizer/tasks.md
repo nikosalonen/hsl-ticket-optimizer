@@ -1,14 +1,15 @@
 # Implementation Plan
 
 - [x] 1. Set up project structure and development environment
-  - Create Vite-based project with modern JavaScript setup
-  - Configure package.json with necessary dependencies (Vitest)
+  - Create Vite-based project with TypeScript setup
+  - Configure package.json with necessary dependencies (Vitest, TypeScript)
   - Set up basic HTML structure and CSS reset
   - Create directory structure: src/, tests/, public/
+  - Configure tsconfig.json with strict type checking
   - _Requirements: 4.3, 4.4_
 
-- [ ] 2. Implement core data models and interfaces
-  - Create TypeScript-style interfaces as JSDoc comments for type safety
+- [x] 2. Implement core data models and interfaces
+  - Create TypeScript interfaces for strict type safety
   - Define TicketPrices, UserInput, CalculationResults interfaces
   - Create constants for zone options and validation rules
   - _Requirements: 1.4, 6.1_

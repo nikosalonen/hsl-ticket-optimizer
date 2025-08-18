@@ -5,15 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",
     "jsdom": "^26.1.0",
+    "typescript": "^5.9.2",
     "vite": "^7.1.2",
     "vitest": "^3.2.4"
   },
