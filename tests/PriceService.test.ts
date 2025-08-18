@@ -704,7 +704,6 @@ describe("PriceService integration", () => {
 describe("PriceService utility methods", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
-		// @ts-expect-error ensure fetch mock persists after reset
 		global.fetch = mockFetch;
 	});
 	describe("getZoneCode", () => {

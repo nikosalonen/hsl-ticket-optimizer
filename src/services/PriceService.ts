@@ -24,7 +24,7 @@ import {
 	type ErrorType,
 	type HSLTicket,
 	type HSLTicketsResponse,
-	type SeasonTicket,
+	// type SeasonTicket,
 	type SeriesTicket,
 	type TicketPrices,
 } from "../models/types.js";
@@ -360,67 +360,6 @@ export class PriceService {
 	}
 
 	/**
-	 * Fetch continuous monthly ticket price
-	 * Note: This gets the regular continuous subscription price (not the saver one)
-	 * @param zones Zone string
-	 * @param customerGroup Customer group
-	 * @param homemunicipality Home municipality
-	 * @returns Continuous monthly ticket price, or undefined if not found (to trigger discount calculation)
-	 */
-	private async fetchContinuousMonthlyPrice(
-		zones: string,
-		customerGroup: number,
-		homemunicipality: string,
-	): Promise<number | undefined> {
-		const url = `${PriceService.BASE_URL}/season?language=fi&customerGroup=${customerGroup}&zones=${zones}&homemunicipality=${homemunicipality}&ownership=personal`;
-
-		console.log("fetchContinuousMonthlyPrice URL:", url);
-
-		try {
-			const response = await this.makeRequest<HSLSeasonResponse>(url);
-			console.log(
-				"fetchContinuousMonthlyPrice response subscriptions:",
-				response.subscriptions?.map((s) => ({
-					title: s.title,
-					price: s.price,
-					zones: s.zones,
-				})),
-			);
-
-			// Look for the regular "Jatkuva tilaus" (non-saver continuous subscription)
-			let continuousSubscription: HSLSubscription | undefined;
-
-			if (response.subscriptions && Array.isArray(response.subscriptions)) {
-				continuousSubscription = response.subscriptions.find(
-					(subscription) =>
-						subscription.customerGroup === customerGroup &&
-						subscription.zones === parseInt(zones) &&
-						subscription.title.includes("Jatkuva tilaus") &&
-						!subscription.title.includes("säästötilaus"), // Exclude the saver version
-				);
-			}
-
-			if (
-				!continuousSubscription ||
-				typeof continuousSubscription.price !== "number"
-			) {
-				// No continuous subscription found - return undefined to trigger discount calculation
-				console.log(
-					"No continuous subscription found, will apply discount to season ticket price",
-				);
-				return undefined;
-			}
-
-			console.log("Found continuous subscription:", continuousSubscription);
-			return continuousSubscription.price; // This is already the monthly price (e.g., 107.70)
-		} catch (_error) {
-			// Error occurred - return undefined to trigger discount calculation
-			console.log("Error fetching continuous subscription, will apply discount to season ticket price");
-			return undefined;
-		}
-	}
-
-	/**
 	 * Fetch daily (24hr) ticket price
 	 * @param zones Zone string
 	 * @param customerGroup Customer group
@@ -476,45 +415,45 @@ export class PriceService {
 	 * @param homemunicipality Home municipality
 	 * @returns Season ticket information (30-day ticket)
 	 */
-	private async fetchSeasonTicketData(
-		zones: string,
-		customerGroup: number,
-		homemunicipality: string,
-	): Promise<SeasonTicket> {
-		const url = `${PriceService.BASE_URL}/season?language=fi&customerGroup=${customerGroup}&zones=${zones}&homemunicipality=${homemunicipality}&ownership=personal`;
-
-		try {
-			const response = await this.makeRequest<HSLSeasonResponse>(url);
-
-			// Handle the actual API response structure with both tickets and subscriptions
-			let monthlyTicket: HSLTicket | undefined;
-
-			// Look for 30-day ticket in the tickets array
-			if (response.tickets && Array.isArray(response.tickets)) {
-				monthlyTicket = response.tickets.find(
-					(ticket) =>
-						ticket.customerGroup === customerGroup &&
-						ticket.zones === parseInt(zones) &&
-						ticket.durationDays === 30,
-				);
-			}
-
-			if (!monthlyTicket || typeof monthlyTicket.price !== "number") {
-				throw new APIError(
-					"No 30-day season ticket found in response",
-					"invalid_response",
-				);
-			}
-
-			return {
-				price: monthlyTicket.price, // This is already the monthly price (e.g., 107.70)
-				durationDays: 30,
-				type: "season",
-			};
-		} catch (error) {
-			throw this.handleAPIError(error, "season ticket");
-		}
-	}
+	// private async fetchSeasonTicketData(
+	// 	zones: string,
+	// 	customerGroup: number,
+	// 	homemunicipality: string,
+	// ): Promise<SeasonTicket> {
+	// 	const url = `${PriceService.BASE_URL}/season?language=fi&customerGroup=${customerGroup}&zones=${zones}&homemunicipality=${homemunicipality}&ownership=personal`;
+	//
+	// 	try {
+	// 		const response = await this.makeRequest<HSLSeasonResponse>(url);
+	//
+	// 		// Handle the actual API response structure with both tickets and subscriptions
+	// 		let monthlyTicket: HSLTicket | undefined;
+	//
+	// 		// Look for 30-day ticket in the tickets array
+	// 		if (response.tickets && Array.isArray(response.tickets)) {
+	// 			monthlyTicket = response.tickets.find(
+	// 				(ticket) =>
+	// 					ticket.customerGroup === customerGroup &&
+	// 					ticket.zones === parseInt(zones) &&
+	// 					ticket.durationDays === 30,
+	// 			);
+	// 		}
+	//
+	// 		if (!monthlyTicket || typeof monthlyTicket.price !== "number") {
+	// 			throw new APIError(
+	// 				"No 30-day season ticket found in response",
+	// 				"invalid_response",
+	// 			);
+	// 		}
+	//
+	// 		return {
+	// 			price: monthlyTicket.price, // This is already the monthly price (e.g., 107.70)
+	// 			durationDays: 30,
+	// 			type: "season",
+	// 		};
+	// 	} catch (error) {
+	// 		throw this.handleAPIError(error, "season ticket");
+	// 	}
+	// }
 
 	/**
 	 * Fetch saver subscription price - gets the 12-month commitment subscription
@@ -523,37 +462,37 @@ export class PriceService {
 	 * @param homemunicipality Home municipality
 	 * @returns Saver subscription price
 	 */
-	private async fetchSaverSubscriptionPrice(
-		zones: string,
-		customerGroup: number,
-		homemunicipality: string,
-	): Promise<number | undefined> {
-		const url = `${PriceService.BASE_URL}/season?language=fi&customerGroup=${customerGroup}&zones=${zones}&homemunicipality=${homemunicipality}&ownership=personal`;
-
-		try {
-			const response = await this.makeRequest<HSLSeasonResponse>(url);
-
-			// Look for the "Jatkuva säästötilaus" (12-month commitment) in subscriptions array
-			let saverSubscription: HSLSubscription | undefined;
-
-			if (response.subscriptions && Array.isArray(response.subscriptions)) {
-				saverSubscription = response.subscriptions.find(
-					(subscription) =>
-						subscription.customerGroup === customerGroup &&
-						subscription.zones === parseInt(zones) &&
-						subscription.title.includes("säästötilaus"), // "Jatkuva säästötilaus"
-				);
-			}
-
-			if (!saverSubscription || typeof saverSubscription.price !== "number") {
-				return undefined;
-			}
-
-			return saverSubscription.price; // This is already the monthly price (e.g., 89.80)
-		} catch (_error) {
-			return undefined;
-		}
-	}
+	// private async fetchSaverSubscriptionPrice(
+	// 	zones: string,
+	// 	customerGroup: number,
+	// 	homemunicipality: string,
+	// ): Promise<number | undefined> {
+	// 	const url = `${PriceService.BASE_URL}/season?language=fi&customerGroup=${customerGroup}&zones=${zones}&homemunicipality=${homemunicipality}&ownership=personal`;
+	//
+	// 	try {
+	// 		const response = await this.makeRequest<HSLSeasonResponse>(url);
+	//
+	// 		// Look for the "Jatkuva säästötilaus" (12-month commitment) in subscriptions array
+	// 		let saverSubscription: HSLSubscription | undefined;
+	//
+	// 		if (response.subscriptions && Array.isArray(response.subscriptions)) {
+	// 			saverSubscription = response.subscriptions.find(
+	// 				(subscription) =>
+	// 					subscription.customerGroup === customerGroup &&
+	// 					subscription.zones === parseInt(zones) &&
+	// 					subscription.title.includes("säästötilaus"), // "Jatkuva säästötilaus"
+	// 			);
+	// 		}
+	//
+	// 		if (!saverSubscription || typeof saverSubscription.price !== "number") {
+	// 			return undefined;
+	// 		}
+	//
+	// 		return saverSubscription.price; // This is already the monthly price (e.g., 89.80)
+	// 	} catch (_error) {
+	// 		return undefined;
+	// 	}
+	// }
 
 	/**
 	 * Get cached prices if available and not expired

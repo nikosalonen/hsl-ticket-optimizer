@@ -169,42 +169,40 @@ function renderComparison(result: OptimalResult) {
 			const rank = index + 1;
 
 			return `
-				<div class="result-card ${isOptimal ? "optimal" : ""}" data-rank="${rank}">
-					<div class="result-header">
-						<div class="result-icon">${r.icon}</div>
-						<div class="result-title-section">
-							<h3 class="result-title">${r.label}</h3>
-							<p class="result-description">${r.description}</p>
+				<div class="card bg-base-100 shadow ${isOptimal ? "border border-primary" : ""}" data-rank="${rank}">
+					<div class="card-body gap-3">
+						<div class="flex items-start gap-3">
+							<div class="text-2xl">${r.icon}</div>
+							<div class="flex-1">
+								<h3 class="card-title text-base">${r.label}</h3>
+								<p class="text-base-content/70">${r.description}</p>
+							</div>
+							${isOptimal ? '<div class="badge badge-primary badge-lg">🏆 Best</div>' : ""}
 						</div>
-						${isOptimal ? '<div class="best-badge">🏆 Best Choice</div>' : ""}
-					</div>
 
-					<div class="result-costs">
-						<div class="monthly-cost">
-							<span class="cost-label">Monthly</span>
-							<span class="cost-value">€${r.cost.toFixed(2)}</span>
+						<div class="grid grid-cols-2 gap-3 p-3 rounded-box bg-base-200">
+							<div class="text-center">
+								<span class="text-xs uppercase text-base-content/70">Monthly</span>
+								<div class="font-bold text-lg">€${r.cost.toFixed(2)}</div>
+							</div>
+							<div class="text-center">
+								<span class="text-xs uppercase text-base-content/70">Annual</span>
+								<div class="font-bold text-lg">€${r.annualCost.toFixed(2)}</div>
+							</div>
 						</div>
-						<div class="annual-cost">
-							<span class="cost-label">Annual</span>
-							<span class="cost-value">€${r.annualCost.toFixed(2)}</span>
-						</div>
-					</div>
 
-					${
-						savingsVsWorst > 0
-							? `
-						<div class="savings">
-							💰 Save €${savingsVsWorst.toFixed(2)}/month vs most expensive
-						</div>
-					`
-							: ""
-					}
+						${
+							savingsVsWorst > 0
+								? `<div class="alert alert-success py-2">💰 Save €${savingsVsWorst.toFixed(2)}/month vs most expensive</div>`
+								: ""
+						}
 
-					<div class="result-calculation">
-						<details>
-							<summary>How this is calculated</summary>
-							<p>${r.calc}</p>
-						</details>
+						<div>
+							<details class="collapse collapse-arrow bg-base-200">
+								<summary class="collapse-title text-sm font-medium">How this is calculated</summary>
+								<div class="collapse-content"><p class="text-sm">${r.calc}</p></div>
+							</details>
+						</div>
 					</div>
 				</div>
 			`;
@@ -217,27 +215,23 @@ function renderComparison(result: OptimalResult) {
 
 	return `
 		<div class="results-summary">
-			<div class="summary-card">
-				<h3>🎯 Recommendation</h3>
-				<p class="optimal-choice">
-					<strong>${optimalRow?.label || result.optimal}</strong> is your best option
-				</p>
-				<p class="optimal-cost">€${optimalRow?.cost.toFixed(2) || "0"} per month</p>
-				${
-					optimalSavings > 0
-						? `
-					<p class="savings-summary">
-						Save €${optimalSavings.toFixed(2)}/month (€${(optimalSavings * 12).toFixed(2)}/year)
-					</p>
-				`
-						: ""
-				}
+			<div class="card bg-primary text-primary-content">
+				<div class="card-body items-center text-center">
+					<h3 class="card-title">🎯 Recommendation</h3>
+					<p><strong>${optimalRow?.label || result.optimal}</strong> is your best option</p>
+					<p class="text-2xl font-bold">€${optimalRow?.cost.toFixed(2) || "0"} per month</p>
+					${
+						optimalSavings > 0
+							? `<p class="badge badge-success badge-outline">Save €${optimalSavings.toFixed(2)}/month (€${(optimalSavings * 12).toFixed(2)}/year)</p>`
+							: ""
+					}
+				</div>
 			</div>
 		</div>
 
 		<div class="results-comparison">
-			<h3>📊 All Options Compared</h3>
-			<div class="results-grid">
+			<h3 class="text-xl font-semibold mb-3">📊 All Options Compared</h3>
+			<div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 				${list}
 			</div>
 		</div>
