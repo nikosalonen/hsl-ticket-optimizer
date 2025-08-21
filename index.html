@@ -1,114 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fi" data-theme="cupcake">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HSL Ticket Optimizer</title>
-    <meta name="description" content="Find the most cost-effective HSL public transport ticket option based on your travel patterns">
-    <link rel="stylesheet" href="/src/styles/main.css">
-</head>
-<body>
-    <div id="app" class="container mx-auto p-4 min-h-screen">
-        <header class="text-center mb-8 pb-4 border-b border-primary">
-            <h1 class="text-3xl font-bold text-primary">HSL Ticket Optimizer</h1>
-            <p class="text-base-content/70">Find the most cost-effective ticket option for your travel needs</p>
-        </header>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>HSL Ticket Optimizer</title>
+        <meta
+            name="description"
+            content="Find the most cost-effective HSL public transport ticket option based on your travel patterns"
+        />
+        <link rel="stylesheet" href="/src/styles/main.css" />
+        <script
+            src="https://cdn.counter.dev/script.js"
+            data-id="da3ed73f-eedb-4dd0-acac-8e7366f8508e"
+            data-utcoffset="2"
+        ></script>
+    </head>
+    <body>
+        <div id="app" class="container mx-auto p-4 min-h-screen">
+            <header class="text-center mb-8 pb-4 border-b border-primary">
+                <h1 class="text-3xl font-bold text-primary">
+                    HSL Ticket Optimizer
+                </h1>
+                <p class="text-base-content/70">
+                    Find the most cost-effective ticket option for your travel
+                    needs
+                </p>
+            </header>
 
-        <main>
-            <form id="ticket-form" class="ticket-form space-y-6">
-                <div class="form-section form-control w-full">
-                    <label for="zones" class="label">
-                        <span class="label-text">Travel Zones</span>
-                    </label>
-                    <select id="zones" name="zones" required class="select select-bordered select-lg w-full">
-                        <option value="">Select zones</option>
-                        <option value="AB">AB</option>
-                        <option value="ABC">ABC</option>
-                        <option value="ABCD">ABCD</option>
-                        <option value="BCD">BCD</option>
-                        <option value="CD">CD</option>
-                        <option value="D">D</option>
-                    </select>
+            <main>
+                <form id="ticket-form" class="ticket-form space-y-6">
+                    <div class="form-section form-control w-full">
+                        <label for="zones" class="label">
+                            <span class="label-text">Travel Zones</span>
+                        </label>
+                        <select
+                            id="zones"
+                            name="zones"
+                            required
+                            class="select select-bordered select-lg w-full"
+                        >
+                            <option value="">Select zones</option>
+                            <option value="AB">AB</option>
+                            <option value="ABC">ABC</option>
+                            <option value="ABCD">ABCD</option>
+                            <option value="BCD">BCD</option>
+                            <option value="CD">CD</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+
+                    <div class="form-section form-control w-full">
+                        <label for="homemunicipality" class="label">
+                            <span class="label-text"
+                                >Home municipality (Kotikunta)</span
+                            >
+                        </label>
+                        <select
+                            id="homemunicipality"
+                            name="homemunicipality"
+                            required
+                            class="select select-bordered select-lg w-full"
+                        >
+                            <option value="helsinki" selected>Helsinki</option>
+                            <option value="espoo">Espoo</option>
+                            <option value="vantaa">Vantaa</option>
+                            <option value="kauniainen">Kauniainen</option>
+                            <option value="kerava">Kerava</option>
+                            <option value="kirkkonummi">Kirkkonummi</option>
+                            <option value="sipoo">Sipoo</option>
+                            <option value="siuntio">Siuntio</option>
+                            <option value="tuusula">Tuusula</option>
+                            <option value="askola">Askola</option>
+                            <option value="hanko">Hanko</option>
+                            <option value="hausjarvi">Hausjärvi</option>
+                            <option value="inkoo">Inkoo</option>
+                            <option value="jarvenpaa">Järvenpää</option>
+                            <option value="karkkila">Karkkila</option>
+                            <option value="lohja">Lohja</option>
+                            <option value="loppi">Loppi</option>
+                            <option value="mantsala">Mäntsälä</option>
+                            <option value="nurmijarvi">Nurmijärvi</option>
+                            <option value="pornainen">Pornainen</option>
+                            <option value="porvoo">Porvoo</option>
+                            <option value="pukkila">Pukkila</option>
+                            <option value="raasepori">Raasepori</option>
+                            <option value="vihti">Vihti</option>
+                            <option value="muu">Muu</option>
+                        </select>
+                    </div>
+
+                    <div class="form-section form-control w-full">
+                        <label for="tripsPerWeek" class="label">
+                            <span class="label-text">Trips per week</span>
+                        </label>
+                        <input
+                            type="number"
+                            id="tripsPerWeek"
+                            name="tripsPerWeek"
+                            min="1"
+                            max="50"
+                            required
+                            class="input input-bordered input-lg w-full"
+                        />
+                        <small class="label-text-alt text-base-content/70"
+                            >Enter number of one-way trips (1-50)</small
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">
+                        Calculate Best Option
+                    </button>
+                </form>
+
+                <div
+                    id="loading"
+                    class="loading hidden text-center p-6 text-base-content/70"
+                >
+                    <span class="loading loading-spinner loading-lg"></span>
+                    <p>Fetching current HSL prices...</p>
                 </div>
 
-                <div class="form-section form-control w-full">
-                    <label for="homemunicipality" class="label">
-                        <span class="label-text">Home municipality (Kotikunta)</span>
-                    </label>
-                    <select id="homemunicipality" name="homemunicipality" required class="select select-bordered select-lg w-full">
-                        <option value="helsinki" selected>Helsinki</option>
-                        <option value="espoo">Espoo</option>
-                        <option value="vantaa">Vantaa</option>
-                        <option value="kauniainen">Kauniainen</option>
-                        <option value="kerava">Kerava</option>
-                        <option value="kirkkonummi">Kirkkonummi</option>
-                        <option value="sipoo">Sipoo</option>
-                        <option value="siuntio">Siuntio</option>
-                        <option value="tuusula">Tuusula</option>
-                        <option value="askola">Askola</option>
-                        <option value="hanko">Hanko</option>
-                        <option value="hausjarvi">Hausjärvi</option>
-                        <option value="inkoo">Inkoo</option>
-                        <option value="jarvenpaa">Järvenpää</option>
-                        <option value="karkkila">Karkkila</option>
-                        <option value="lohja">Lohja</option>
-                        <option value="loppi">Loppi</option>
-                        <option value="mantsala">Mäntsälä</option>
-                        <option value="nurmijarvi">Nurmijärvi</option>
-                        <option value="pornainen">Pornainen</option>
-                        <option value="porvoo">Porvoo</option>
-                        <option value="pukkila">Pukkila</option>
-                        <option value="raasepori">Raasepori</option>
-                        <option value="vihti">Vihti</option>
-                        <option value="muu">Muu</option>
-                    </select>
+                <div id="error" class="error hidden alert alert-error">
+                    <span class="error-message"></span>
                 </div>
 
-                <div class="form-section form-control w-full">
-                    <label for="tripsPerWeek" class="label">
-                        <span class="label-text">Trips per week</span>
-                    </label>
-                    <input type="number" id="tripsPerWeek" name="tripsPerWeek" min="1" max="50" required class="input input-bordered input-lg w-full" />
-                    <small class="label-text-alt text-base-content/70">Enter number of one-way trips (1-50)</small>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-full">Calculate Best Option</button>
-            </form>
-
-            <div id="loading" class="loading hidden text-center p-6 text-base-content/70">
-                <span class="loading loading-spinner loading-lg"></span>
-                <p>Fetching current HSL prices...</p>
-            </div>
-
-            <div id="error" class="error hidden alert alert-error">
-                <span class="error-message"></span>
-            </div>
-
-            <div id="results" class="results hidden mt-8">
-                <h2 class="text-2xl font-semibold text-primary mb-4">Cost Comparison Results</h2>
-                <div id="charts-section" class="charts-section grid gap-4 md:grid-cols-2 mb-4">
-                    <div class="chart-container card bg-base-100 shadow">
-                        <div class="card-body">
-                            <h3 class="card-title text-base">📊 Monthly Cost Comparison</h3>
-                            <canvas id="cost-comparison-chart"></canvas>
+                <div id="results" class="results hidden mt-8">
+                    <h2 class="text-2xl font-semibold text-primary mb-4">
+                        Cost Comparison Results
+                    </h2>
+                    <div
+                        id="charts-section"
+                        class="charts-section grid gap-4 md:grid-cols-2 mb-4"
+                    >
+                        <div class="chart-container card bg-base-100 shadow">
+                            <div class="card-body">
+                                <h3 class="card-title text-base">
+                                    📊 Monthly Cost Comparison
+                                </h3>
+                                <canvas id="cost-comparison-chart"></canvas>
+                            </div>
+                        </div>
+                        <div
+                            class="chart-container card bg-base-100 shadow md:col-span-2"
+                        >
+                            <div class="card-body">
+                                <h3 class="card-title text-base">
+                                    📈 Cost vs. Trips per Week
+                                </h3>
+                                <canvas id="trips-cost-chart"></canvas>
+                            </div>
                         </div>
                     </div>
-                    <div class="chart-container card bg-base-100 shadow md:col-span-2">
-                        <div class="card-body">
-                            <h3 class="card-title text-base">📈 Cost vs. Trips per Week</h3>
-                            <canvas id="trips-cost-chart"></canvas>
-                        </div>
-                    </div>
+                    <div id="results-content"></div>
                 </div>
-                <div id="results-content"></div>
-            </div>
-        </main>
+            </main>
 
-        <footer class="mt-12 pt-4 border-t text-center text-base-content/70">
-            <p>Prices fetched from HSL API. Results are estimates for comparison purposes.</p>
-        </footer>
-    </div>
+            <footer
+                class="mt-12 pt-4 border-t text-center text-base-content/70"
+            >
+                <p>
+                    Prices fetched from HSL API. Results are estimates for
+                    comparison purposes.
+                </p>
+            </footer>
+        </div>
 
-    <script type="module" src="/src/main.ts"></script>
-</body>
+        <script type="module" src="/src/main.ts"></script>
+    </body>
 </html>
