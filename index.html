@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="fi">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>HSL Fare Finder — Cheapest Ticket for Your Commute</title>
+        <title>HSL-lippulaskuri — Edullisin lippu työmatkallesi</title>
         <meta
             name="description"
-            content="Compare HSL single, series, season, and monthly tickets side by side. Enter your zones and trips to instantly see which Helsinki Region transport pass saves you the most money."
+            content="Vertaa HSL:n kertalippuja, sarjalippuja, kausilippuja ja kuukausilippuja. Syötä vyöhykkeesi ja matkamääräsi löytääksesi edullisimman vaihtoehdon."
         />
         <meta
             name="keywords"
@@ -16,16 +16,16 @@
 
         <!-- Open Graph -->
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="HSL Fare Finder — Cheapest Ticket for Your Commute" />
-        <meta property="og:description" content="Compare HSL single, series, season, and monthly tickets side by side. Enter your zones and trips to instantly find the cheapest option." />
+        <meta property="og:title" content="HSL-lippulaskuri — Edullisin lippu työmatkallesi" />
+        <meta property="og:description" content="Vertaa HSL:n kertalippuja, sarjalippuja, kausilippuja ja kuukausilippuja. Löydä edullisin vaihtoehto." />
         <meta property="og:url" content="https://nikosalonen.github.io/hsl-ticket-optimizer/" />
         <meta property="og:locale" content="fi_FI" />
-        <meta property="og:site_name" content="HSL Fare Finder" />
+        <meta property="og:site_name" content="HSL-lippulaskuri" />
 
         <!-- Twitter Card -->
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content="HSL Fare Finder — Cheapest Ticket for Your Commute" />
-        <meta name="twitter:description" content="Compare HSL ticket types and find the cheapest option for your Helsinki Region commute." />
+        <meta name="twitter:title" content="HSL-lippulaskuri — Edullisin lippu työmatkallesi" />
+        <meta name="twitter:description" content="Vertaa HSL-lippuja ja löydä edullisin vaihtoehto työmatkallesi." />
 
         <meta name="robots" content="index, follow" />
         <meta name="theme-color" content="#1a6fa0" />
@@ -73,20 +73,30 @@
                     <h1
                         class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight"
                     >
-                        HSL Fare<br class="hidden sm:block" />
-                        <span class="text-primary">Finder</span>
+                        <span data-i18n="header.title.line1">HSL-lippu</span><br class="hidden sm:block" />
+                        <span class="text-primary" data-i18n="header.title.line2">laskuri</span>
                     </h1>
-                    <p class="mt-2 text-base-content/50 text-xl">
-                        Find the cheapest ticket for your commute.
+                    <p class="mt-2 text-base-content/50 text-xl" data-i18n="header.subtitle">
+                        Löydä edullisin lippu työmatkallesi.
                     </p>
                 </div>
                 <div class="flex items-center gap-1 mt-1">
+                <select
+                    id="lang-select"
+                    class="select select-ghost select-sm font-semibold"
+                    aria-label="Language"
+                >
+                    <option value="fi" selected>FI</option>
+                    <option value="sv">SV</option>
+                    <option value="en">EN</option>
+                </select>
                 <a
                     href="https://github.com/nikosalonen/hsl-ticket-optimizer"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="btn btn-ghost btn-circle"
-                    aria-label="View source on GitHub"
+                    data-i18n-aria="header.github.ariaLabel"
+                    aria-label="Katso lähdekoodi GitHubissa"
                 >
                     <svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>GitHub</title><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
                 </a>
@@ -94,7 +104,8 @@
                     id="theme-toggle"
                     type="button"
                     class="btn btn-ghost btn-circle"
-                    aria-label="Toggle dark mode"
+                    data-i18n-aria="header.theme.ariaLabel"
+                    aria-label="Vaihda tumma/vaalea tila"
                 >
                     <!-- Sun icon (shown in dark mode) -->
                     <svg class="theme-icon-light hidden size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><title>Sun</title><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg>
@@ -115,7 +126,8 @@
                                 <label for="zones" class="label pb-1">
                                     <span
                                         class="text-sm font-semibold uppercase tracking-widest text-base-content/50"
-                                        >Zones</span
+                                        data-i18n="form.zones.label"
+                                        >Vyöhykkeet</span
                                     >
                                 </label>
                                 <select
@@ -124,7 +136,7 @@
                                     required
                                     class="select select-bordered select-xl w-full text-base"
                                 >
-                                    <option value="">Select zones</option>
+                                    <option value="" data-i18n="form.zones.placeholder">Valitse vyöhykkeet</option>
                                     <option value="AB">AB</option>
                                     <option value="ABC">ABC</option>
                                     <option value="ABCD">ABCD</option>
@@ -138,7 +150,8 @@
                                 <label for="homemunicipality" class="label pb-1">
                                     <span
                                         class="text-sm font-semibold uppercase tracking-widest text-base-content/50"
-                                        >Municipality</span
+                                        data-i18n="form.municipality.label"
+                                        >Kotikunta</span
                                     >
                                 </label>
                                 <select
@@ -147,45 +160,45 @@
                                     required
                                     class="select select-bordered select-xl w-full text-base"
                                 >
-                                    <option value="helsinki" selected>
+                                    <option value="helsinki" selected data-i18n="municipality.helsinki">
                                         Helsinki
                                     </option>
-                                    <option value="espoo">Espoo</option>
-                                    <option value="vantaa">Vantaa</option>
-                                    <option value="kauniainen">
+                                    <option value="espoo" data-i18n="municipality.espoo">Espoo</option>
+                                    <option value="vantaa" data-i18n="municipality.vantaa">Vantaa</option>
+                                    <option value="kauniainen" data-i18n="municipality.kauniainen">
                                         Kauniainen
                                     </option>
-                                    <option value="kerava">Kerava</option>
-                                    <option value="kirkkonummi">
+                                    <option value="kerava" data-i18n="municipality.kerava">Kerava</option>
+                                    <option value="kirkkonummi" data-i18n="municipality.kirkkonummi">
                                         Kirkkonummi
                                     </option>
-                                    <option value="sipoo">Sipoo</option>
-                                    <option value="siuntio">Siuntio</option>
-                                    <option value="tuusula">Tuusula</option>
-                                    <option value="askola">Askola</option>
-                                    <option value="hanko">Hanko</option>
-                                    <option value="hausjarvi">
-                                        Hausj&auml;rvi
+                                    <option value="sipoo" data-i18n="municipality.sipoo">Sipoo</option>
+                                    <option value="siuntio" data-i18n="municipality.siuntio">Siuntio</option>
+                                    <option value="tuusula" data-i18n="municipality.tuusula">Tuusula</option>
+                                    <option value="askola" data-i18n="municipality.askola">Askola</option>
+                                    <option value="hanko" data-i18n="municipality.hanko">Hanko</option>
+                                    <option value="hausjarvi" data-i18n="municipality.hausjarvi">
+                                        Hausjärvi
                                     </option>
-                                    <option value="inkoo">Inkoo</option>
-                                    <option value="jarvenpaa">
-                                        J&auml;rvenp&auml;&auml;
+                                    <option value="inkoo" data-i18n="municipality.inkoo">Inkoo</option>
+                                    <option value="jarvenpaa" data-i18n="municipality.jarvenpaa">
+                                        Järvenpää
                                     </option>
-                                    <option value="karkkila">Karkkila</option>
-                                    <option value="lohja">Lohja</option>
-                                    <option value="loppi">Loppi</option>
-                                    <option value="mantsala">
-                                        M&auml;nts&auml;l&auml;
+                                    <option value="karkkila" data-i18n="municipality.karkkila">Karkkila</option>
+                                    <option value="lohja" data-i18n="municipality.lohja">Lohja</option>
+                                    <option value="loppi" data-i18n="municipality.loppi">Loppi</option>
+                                    <option value="mantsala" data-i18n="municipality.mantsala">
+                                        Mäntsälä
                                     </option>
-                                    <option value="nurmijarvi">
-                                        Nurmij&auml;rvi
+                                    <option value="nurmijarvi" data-i18n="municipality.nurmijarvi">
+                                        Nurmijärvi
                                     </option>
-                                    <option value="pornainen">Pornainen</option>
-                                    <option value="porvoo">Porvoo</option>
-                                    <option value="pukkila">Pukkila</option>
-                                    <option value="raasepori">Raasepori</option>
-                                    <option value="vihti">Vihti</option>
-                                    <option value="muu">Muu</option>
+                                    <option value="pornainen" data-i18n="municipality.pornainen">Pornainen</option>
+                                    <option value="porvoo" data-i18n="municipality.porvoo">Porvoo</option>
+                                    <option value="pukkila" data-i18n="municipality.pukkila">Pukkila</option>
+                                    <option value="raasepori" data-i18n="municipality.raasepori">Raasepori</option>
+                                    <option value="vihti" data-i18n="municipality.vihti">Vihti</option>
+                                    <option value="muu" data-i18n="municipality.muu">Muu</option>
                                 </select>
                             </div>
                         </div>
@@ -194,7 +207,8 @@
                             <label for="tripsPerWeek" class="label pb-1">
                                 <span
                                     class="text-sm font-semibold uppercase tracking-widest text-base-content/50"
-                                    >Trips per week</span
+                                    data-i18n="form.trips.label"
+                                    >Matkat viikossa</span
                                 >
                             </label>
                             <div class="flex items-baseline gap-2 mb-1">
@@ -205,7 +219,8 @@
                                 >
                                 <span
                                     class="text-base-content/40 text-base font-medium tracking-wide"
-                                    >trips / week</span
+                                    data-i18n="form.trips.unit"
+                                    >matkaa / viikko</span
                                 >
                             </div>
                             <input
@@ -234,7 +249,7 @@
                     aria-live="polite"
                 >
                     <span class="loading loading-spinner loading-lg"></span>
-                    <p class="mt-3 text-base">Fetching prices from HSL...</p>
+                    <p class="mt-3 text-base" data-i18n="loading.text">Haetaan hintoja HSL:ltä...</p>
                 </div>
 
                 <div
@@ -254,8 +269,9 @@
                             <div class="card-body">
                                 <h3
                                     class="text-sm font-semibold uppercase tracking-widest text-base-content/40 mb-2"
+                                    data-i18n="chart.monthlyCost"
                                 >
-                                    Monthly Cost
+                                    Kuukausikustannus
                                 </h3>
                                 <canvas id="cost-comparison-chart"></canvas>
                             </div>
@@ -266,8 +282,9 @@
                             <div class="card-body">
                                 <h3
                                     class="text-sm font-semibold uppercase tracking-widest text-base-content/40 mb-2"
+                                    data-i18n="chart.costVsTrips"
                                 >
-                                    Cost vs. Trips
+                                    Hinta vs. matkat
                                 </h3>
                                 <canvas id="trips-cost-chart"></canvas>
                             </div>
@@ -279,7 +296,7 @@
             <footer
                 class="mt-16 py-6 text-center text-sm text-base-content/30"
             >
-                <p>Prices from HSL. Estimates for comparison only.</p>
+                <p data-i18n="footer.disclaimer">Hinnat HSL:ltä. Arviot vain vertailua varten.</p>
             </footer>
         </div>
 

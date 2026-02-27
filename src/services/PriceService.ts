@@ -19,6 +19,7 @@
  * - 70v täyttänyt (70+ years): 6
  */
 
+import { t } from "../i18n/index.js";
 import {
   APIError,
   type ErrorType,
@@ -413,7 +414,7 @@ export class PriceService {
    * @returns Cached prices or null
    */
   private getCachedPrices(cacheKey: string): TicketPrices | null {
-    return cacheManager.get(cacheKey);
+    return cacheManager.get(cacheKey) as TicketPrices | null;
   }
 
   /**
@@ -563,20 +564,15 @@ export class PriceService {
    * @returns User-friendly error message
    */
   static getErrorMessage(error: APIError): string {
-    const ERROR_MESSAGES: Record<ErrorType, string> = {
-      network:
-        "Unable to connect to HSL services. Please check your internet connection and try again.",
-      cors: "Browser security settings are blocking the request. Please try refreshing the page.",
-      invalid_response:
-        "Received invalid data from HSL services. Please try again later.",
-      rate_limit:
-        "Too many requests. Please wait a moment before trying again.",
+    const ERROR_KEYS: Record<ErrorType, string> = {
+      network: "error.network",
+      cors: "error.cors",
+      invalid_response: "error.invalidResponse",
+      rate_limit: "error.rateLimit",
     };
 
-    return (
-      ERROR_MESSAGES[error.type] ||
-      "An unexpected error occurred. Please try again."
-    );
+    const key = ERROR_KEYS[error.type];
+    return key ? t(key) : t("error.unknown");
   }
 
   /**
@@ -806,7 +802,7 @@ export class PriceService {
       return {
         monthlyCost: 0,
         annualCost: 0,
-        calculation: "No trips - no cost",
+        calculation: t("calc.noTrips"),
         tripsPerMonth: 0,
         totalTickets: 0,
       };
@@ -835,7 +831,13 @@ export class PriceService {
     const annualCost = Math.round(tripsPerYear * singleTicketPrice * 100) / 100;
 
     // Create calculation explanation
-    const calculation = `${tripsPerWeek} trips/week × ${PriceService.WEEKS_PER_MONTH} weeks/month = ${tripsPerMonth.toFixed(1)} trips/month × €${singleTicketPrice} = €${monthlyCost}/month`;
+    const calculation = t("calc.single", {
+      trips: tripsPerWeek,
+      weeks: PriceService.WEEKS_PER_MONTH,
+      tripsMonth: tripsPerMonth.toFixed(1),
+      price: singleTicketPrice,
+      cost: monthlyCost,
+    });
 
     return {
       monthlyCost,
@@ -881,7 +883,7 @@ export class PriceService {
       return {
         monthlyCost: 0,
         annualCost: 0,
-        calculation: "No trips - no cost",
+        calculation: t("calc.noTrips"),
         ticketsNeeded: 0,
         journeysWasted: 0,
       };
@@ -918,11 +920,16 @@ export class PriceService {
     const wasteRatio =
       totalJourneysCapacity === 0 ? 0 : journeysWasted / totalJourneysCapacity;
     if (wasteRatio >= 0.2) {
-      wasteWarning =
-        "Significant waste expected (≥20%) due to validity limits.";
+      wasteWarning = t("calc.wasteWarning");
     }
 
-    const calculation = `${ticketsNeeded}× series (${seriesTicket.journeys} journeys, ${seriesTicket.validityDays} days) with ~${effectiveUsable} usable per pack → €${monthlyCost}/month`;
+    const calculation = t("calc.series", {
+      count: ticketsNeeded,
+      journeys: seriesTicket.journeys,
+      days: seriesTicket.validityDays,
+      usable: effectiveUsable,
+      cost: monthlyCost,
+    });
 
     return {
       monthlyCost,
@@ -947,7 +954,7 @@ export class PriceService {
     }
     const monthlyCost = Math.round(monthlyPrice * 100) / 100;
     const annualCost = Math.round(monthlyCost * 12 * 100) / 100;
-    const calculation = `Fixed €${monthlyCost}/month`;
+    const calculation = t("calc.fixedMonthly", { cost: monthlyCost });
     return {
       monthlyCost,
       annualCost,
@@ -978,8 +985,12 @@ export class PriceService {
     const annualCost = Math.round(monthlyCost * 12 * 100) / 100;
     const calc =
       continuousMonthlyPrice && continuousMonthlyPrice > 0
-        ? `Fixed €${monthlyCost}/month`
-        : `Monthly (€${monthlyPrice}) with ${(discountRatio * 100).toFixed(0)}% discount = €${monthlyCost}/month`;
+        ? t("calc.fixedMonthly", { cost: monthlyCost })
+        : t("calc.discountMonthly", {
+            price: monthlyPrice,
+            discount: (discountRatio * 100).toFixed(0),
+            cost: monthlyCost,
+          });
     return {
       monthlyCost,
       annualCost,
@@ -1000,7 +1011,7 @@ export class PriceService {
     }
     const monthlyCost = Math.round(seasonPrice * 100) / 100;
     const annualCost = Math.round(seasonPrice * 12 * 100) / 100;
-    const calculation = `30-day ticket: €${monthlyCost}/month`;
+    const calculation = t("calc.season", { cost: monthlyCost });
     return {
       monthlyCost,
       annualCost,

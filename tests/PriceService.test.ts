@@ -16,6 +16,25 @@ import { APIError } from "../src/models/types.js";
 import { PriceService } from "../src/services/PriceService.js";
 import { cacheManager } from "../src/utils/CacheManager.js";
 
+// Mock i18n module — use English translations with real interpolation
+vi.mock("../src/i18n/index.js", async () => {
+  const { en } = await import("../src/i18n/locales/en.js");
+  return {
+    t: (key: string, params?: Record<string, string | number>): string => {
+      let text = en[key] ?? key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          text = text.replaceAll(`{${k}}`, String(v));
+        }
+      }
+      return text;
+    },
+    getLocale: () => "en" as const,
+    setLocale: vi.fn(),
+    initI18n: vi.fn(),
+  };
+});
+
 // Mock the cache manager
 vi.mock("../src/utils/CacheManager.js", () => ({
   cacheManager: {

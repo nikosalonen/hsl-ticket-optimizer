@@ -1,7 +1,78 @@
 // Main application entry point
 
 import Chart from "chart.js/auto";
+import type { Locale } from "./i18n/index.js";
+import { getLocale, initI18n, setLocale, t } from "./i18n/index.js";
 import { PriceService, priceService } from "./services/PriceService.js";
+
+// --------------- i18n bootstrap ---------------
+
+initI18n();
+
+function translateStaticDOM() {
+  for (const el of document.querySelectorAll<HTMLElement>("[data-i18n]")) {
+    const key = el.dataset.i18n;
+    if (key) el.textContent = t(key);
+  }
+  for (const el of document.querySelectorAll<HTMLElement>("[data-i18n-aria]")) {
+    const key = el.dataset.i18nAria;
+    if (key) el.setAttribute("aria-label", t(key));
+  }
+  updateMeta();
+}
+
+function updateMeta() {
+  document.title = t("meta.title");
+
+  const descEl = document.querySelector<HTMLMetaElement>(
+    'meta[name="description"]',
+  );
+  if (descEl) descEl.content = t("meta.description");
+
+  const ogTitle = document.querySelector<HTMLMetaElement>(
+    'meta[property="og:title"]',
+  );
+  if (ogTitle) ogTitle.content = t("meta.title");
+
+  const ogDesc = document.querySelector<HTMLMetaElement>(
+    'meta[property="og:description"]',
+  );
+  if (ogDesc) ogDesc.content = t("meta.description");
+
+  const ogLocale = document.querySelector<HTMLMetaElement>(
+    'meta[property="og:locale"]',
+  );
+  if (ogLocale) {
+    const localeMap: Record<Locale, string> = {
+      fi: "fi_FI",
+      sv: "sv_SE",
+      en: "en_US",
+    };
+    ogLocale.content = localeMap[getLocale()];
+  }
+}
+
+// Set language selector to saved locale and wire change handler
+const langSelect = document.querySelector<HTMLSelectElement>("#lang-select");
+if (langSelect) {
+  langSelect.value = getLocale();
+  langSelect.addEventListener("change", () => {
+    setLocale(langSelect.value as Locale);
+  });
+}
+
+// Listen for locale changes to re-translate and re-calculate
+document.addEventListener("locale-change", () => {
+  translateStaticDOM();
+  // Re-calculate if results are already visible
+  const resultsWrap = document.getElementById("results");
+  if (resultsWrap && !resultsWrap.classList.contains("hidden")) {
+    void calculate();
+  }
+});
+
+// Run initial translation
+translateStaticDOM();
 
 // --------------- Theme toggle ---------------
 
@@ -107,6 +178,7 @@ function hideError() {
 function showResults(html: string) {
   const resultsWrap = document.getElementById("results");
   const content = document.getElementById("results-content");
+  // Content is internally generated HTML from renderComparison(), not user input
   if (content) content.innerHTML = html;
   if (resultsWrap) {
     const wasHidden = resultsWrap.classList.contains("hidden");
@@ -154,30 +226,30 @@ function renderComparison(result: OptimalResult) {
     icon: string;
   }> = [
     {
-      label: "Single tickets",
+      label: t("ticket.single.label"),
       key: "single",
       cost: result.single.monthlyCost,
       annualCost: result.single.annualCost,
       calc: result.single.calculation,
-      description: "Pay per trip",
+      description: t("ticket.single.description"),
       icon: ICONS.ticket,
     },
     {
-      label: "Season tickets",
+      label: t("ticket.season.label"),
       key: "season",
       cost: result.season.monthlyCost,
       annualCost: result.season.annualCost,
       calc: result.season.calculation,
-      description: "Annual subscription",
+      description: t("ticket.season.description"),
       icon: ICONS.calendar,
     },
     {
-      label: "Continuous monthly",
+      label: t("ticket.continuousMonthly.label"),
       key: "continuousMonthly",
       cost: result.continuousMonthly.monthlyCost,
       annualCost: result.continuousMonthly.annualCost,
       calc: result.continuousMonthly.calculation,
-      description: "Monthly auto-renewal",
+      description: t("ticket.continuousMonthly.description"),
       icon: ICONS.refresh,
     },
   ];
@@ -185,24 +257,24 @@ function renderComparison(result: OptimalResult) {
   // Add series tickets only if they are available
   if (result.series10) {
     rows.push({
-      label: "10-trip series",
+      label: t("ticket.series10.label"),
       key: "series10",
       cost: result.series10.monthlyCost,
       annualCost: result.series10.annualCost,
       calc: result.series10.calculation,
-      description: "10 trips, 30-day validity",
+      description: t("ticket.series10.description"),
       icon: ICONS.stack,
     });
   }
 
   if (result.series20) {
     rows.push({
-      label: "20-trip series",
+      label: t("ticket.series20.label"),
       key: "series20",
       cost: result.series20.monthlyCost,
       annualCost: result.series20.annualCost,
       calc: result.series20.calculation,
-      description: "20 trips, 60-day validity",
+      description: t("ticket.series20.description"),
       icon: ICONS.stack,
     });
   }
@@ -217,6 +289,7 @@ function renderComparison(result: OptimalResult) {
       const savingsVsWorst =
         (sortedRows[sortedRows.length - 1]?.cost || 0) - r.cost;
 
+      // All template content is internally generated (ticket labels, numbers, SVG icons)
       return `
 				<div class="card bg-base-100 shadow-md border-2 hover:shadow-lg transition-shadow ${isOptimal ? "border-primary" : "border-transparent"}">
 					<div class="card-body gap-3 p-4 sm:p-6">
@@ -228,28 +301,28 @@ function renderComparison(result: OptimalResult) {
 									<p class="text-sm text-base-content/50">${r.description}</p>
 								</div>
 							</div>
-							${isOptimal ? `<span class="badge badge-primary badge-sm gap-1 shrink-0">${ICONS.star} Best</span>` : ""}
+							${isOptimal ? `<span class="badge badge-primary badge-sm gap-1 shrink-0">${ICONS.star} ${t("results.best")}</span>` : ""}
 						</div>
 
 						<div class="grid grid-cols-2 gap-3 p-3 rounded-box bg-base-200/60">
 							<div>
-								<span class="text-xs uppercase tracking-wider text-base-content/40 font-semibold">Monthly</span>
+								<span class="text-xs uppercase tracking-wider text-base-content/40 font-semibold">${t("results.monthly")}</span>
 								<div class="font-bold text-lg tabular-nums">\u20AC${r.cost.toFixed(2)}</div>
 							</div>
 							<div>
-								<span class="text-xs uppercase tracking-wider text-base-content/40 font-semibold">Annual</span>
+								<span class="text-xs uppercase tracking-wider text-base-content/40 font-semibold">${t("results.annual")}</span>
 								<div class="font-bold text-lg tabular-nums">\u20AC${r.annualCost.toFixed(2)}</div>
 							</div>
 						</div>
 
 						${
               savingsVsWorst > 0
-                ? `<p class="text-sm text-success font-medium">Save \u20AC${savingsVsWorst.toFixed(2)}/mo vs most expensive</p>`
+                ? `<p class="text-sm text-success font-medium">${t("results.savingsPerMonth", { amount: savingsVsWorst.toFixed(2) })}</p>`
                 : ""
             }
 
 						<details class="collapse collapse-arrow bg-base-200/60 rounded-box">
-							<summary class="collapse-title text-sm font-medium min-h-0 py-2 px-3">How this is calculated</summary>
+							<summary class="collapse-title text-sm font-medium min-h-0 py-2 px-3">${t("results.howCalculated")}</summary>
 							<div class="collapse-content px-3"><p class="text-sm text-base-content/60">${r.calc}</p></div>
 						</details>
 					</div>
@@ -262,22 +335,23 @@ function renderComparison(result: OptimalResult) {
     ? (sortedRows[sortedRows.length - 1]?.cost || 0) - optimalRow.cost
     : 0;
 
+  // All template content is internally generated (labels, numbers, SVG icons)
   return `
 		<div class="stats bg-primary text-primary-content shadow-lg w-full mb-6">
 			<div class="stat place-items-center gap-0">
-				<div class="stat-title text-primary-content/50">Best Option</div>
-				<div class="stat-value tabular-nums text-3xl sm:text-4xl">\u20AC${optimalRow?.cost.toFixed(2) || "0"}<span class="text-base font-medium text-primary-content/50">/mo</span></div>
+				<div class="stat-title text-primary-content/50">${t("results.bestOption")}</div>
+				<div class="stat-value tabular-nums text-3xl sm:text-4xl">\u20AC${optimalRow?.cost.toFixed(2) || "0"}<span class="text-base font-medium text-primary-content/50">${t("results.perMonth")}</span></div>
 				<div class="stat-desc text-primary-content/60 text-base">${optimalRow?.label || result.optimal}</div>
 				${
           optimalSavings > 0
-            ? `<div class="stat-desc text-primary-content/70 mt-1">Save \u20AC${optimalSavings.toFixed(2)}/mo (\u20AC${(optimalSavings * 12).toFixed(2)}/yr)</div>`
+            ? `<div class="stat-desc text-primary-content/70 mt-1">${t("results.savingsTotal", { amount: optimalSavings.toFixed(2), annualAmount: (optimalSavings * 12).toFixed(2) })}</div>`
             : ""
         }
 			</div>
 		</div>
 
 		<div>
-			<h3 class="text-sm font-semibold text-base-content/40 uppercase tracking-widest mb-4">All Options</h3>
+			<h3 class="text-sm font-semibold text-base-content/40 uppercase tracking-widest mb-4">${t("results.allOptions")}</h3>
 			<div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 				${list}
 			</div>
@@ -297,7 +371,11 @@ function renderCostComparisonChart(result: OptimalResult) {
     costComparisonChart = null;
   }
 
-  const labels: string[] = ["Single", "Season", "Continuous"];
+  const labels: string[] = [
+    t("chart.single"),
+    t("chart.season"),
+    t("chart.continuous"),
+  ];
   const continuousMonthlyValue = Number.isFinite(
     result.continuousMonthly?.monthlyCost,
   )
@@ -309,11 +387,11 @@ function renderCostComparisonChart(result: OptimalResult) {
     continuousMonthlyValue,
   ];
   if (result.series10) {
-    labels.push("Series 10");
+    labels.push(t("chart.series10"));
     data.push(result.series10.monthlyCost);
   }
   if (result.series20) {
-    labels.push("Series 20");
+    labels.push(t("chart.series20"));
     data.push(result.series20.monthlyCost);
   }
 
@@ -323,7 +401,7 @@ function renderCostComparisonChart(result: OptimalResult) {
       labels,
       datasets: [
         {
-          label: "Monthly Cost (\u20AC)",
+          label: t("chart.monthlyCostLabel"),
           data,
           backgroundColor: getThemeColor("--color-primary", 0.2),
           borderColor: getThemeColor("--color-primary"),
@@ -340,7 +418,7 @@ function renderCostComparisonChart(result: OptimalResult) {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: "\u20AC / month" },
+          title: { display: true, text: t("chart.euroPerMonth") },
         },
       },
     },
@@ -370,11 +448,11 @@ async function renderTripsCostChart(
 
   const tripsRange: number[] = [];
   for (
-    let t = Math.max(1, baseTripsPerWeek - 10);
-    t <= baseTripsPerWeek + 10;
-    t++
+    let i = Math.max(1, baseTripsPerWeek - 10);
+    i <= baseTripsPerWeek + 10;
+    i++
   ) {
-    tripsRange.push(t);
+    tripsRange.push(i);
   }
 
   const singleCosts: number[] = [];
@@ -383,8 +461,8 @@ async function renderTripsCostChart(
   const series10Costs: number[] = [];
   const series20Costs: number[] = [];
 
-  for (const t of tripsRange) {
-    const comparison = priceService.findOptimalOption(t, baseOptions);
+  for (const trips of tripsRange) {
+    const comparison = priceService.findOptimalOption(trips, baseOptions);
     singleCosts.push(comparison.single.monthlyCost);
     seasonCosts.push(comparison.season.monthlyCost);
     contMonthlyCosts.push(comparison.continuousMonthly.monthlyCost);
@@ -409,19 +487,19 @@ async function renderTripsCostChart(
     backgroundColor: string;
   }> = [
     {
-      label: "Single",
+      label: t("chart.single"),
       data: singleCosts,
       borderColor: lineColors[0] ?? "#888",
       backgroundColor: lineColors[0] ?? "#888",
     },
     {
-      label: "Season",
+      label: t("chart.season"),
       data: seasonCosts,
       borderColor: lineColors[1] ?? "#888",
       backgroundColor: lineColors[1] ?? "#888",
     },
     {
-      label: "Continuous",
+      label: t("chart.continuous"),
       data: contMonthlyCosts,
       borderColor: lineColors[2] ?? "#888",
       backgroundColor: lineColors[2] ?? "#888",
@@ -429,14 +507,14 @@ async function renderTripsCostChart(
   ];
   if (series10Costs.length)
     datasets.push({
-      label: "Series 10",
+      label: t("chart.series10"),
       data: series10Costs,
       borderColor: lineColors[3] ?? "#888",
       backgroundColor: lineColors[3] ?? "#888",
     });
   if (series20Costs.length)
     datasets.push({
-      label: "Series 20",
+      label: t("chart.series20"),
       data: series20Costs,
       borderColor: lineColors[4] ?? "#888",
       backgroundColor: lineColors[4] ?? "#888",
@@ -445,7 +523,7 @@ async function renderTripsCostChart(
   tripsCostChart = new Chart(ctx, {
     type: "line",
     data: {
-      labels: tripsRange.map((t) => `${t}`),
+      labels: tripsRange.map((trips) => `${trips}`),
       datasets,
     },
     options: {
@@ -457,8 +535,10 @@ async function renderTripsCostChart(
         tooltip: {
           usePointStyle: true,
           callbacks: {
-            labelColor: (ctx) => {
-              const ds = ctx.dataset as unknown as { borderColor?: string };
+            labelColor: (tooltipCtx) => {
+              const ds = tooltipCtx.dataset as unknown as {
+                borderColor?: string;
+              };
               const color =
                 typeof ds?.borderColor === "string" ? ds.borderColor : "#666";
               return {
@@ -474,10 +554,10 @@ async function renderTripsCostChart(
       },
       interaction: { intersect: false, mode: "index" as const },
       scales: {
-        x: { title: { display: true, text: "Trips per week" } },
+        x: { title: { display: true, text: t("chart.tripsPerWeek") } },
         y: {
           beginAtZero: true,
-          title: { display: true, text: "\u20AC per month" },
+          title: { display: true, text: t("chart.euroPerMonthAxis") },
         },
       },
     },
@@ -558,9 +638,7 @@ async function calculate() {
     void renderTripsCostChart(tripsPerWeek, comparisonOptions);
   } catch (error: unknown) {
     const message =
-      error instanceof Error
-        ? error.message
-        : "Unexpected error occurred while calculating";
+      error instanceof Error ? error.message : t("error.unexpected");
     showError(message);
   } finally {
     setLoading(false);
