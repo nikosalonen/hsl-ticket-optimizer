@@ -87,6 +87,11 @@ export const en: TranslationMap = {
   "chart.series10": "Series 10",
   "chart.series20": "Series 20",
 
+  "chart.expand": "Expand chart",
+  "chart.barChartAriaLabel": "Bar chart comparing monthly costs by ticket type",
+  "chart.lineChartAriaLabel":
+    "Line chart showing cost trends by number of trips",
+
   // Footer
   "footer.disclaimer": "Prices from HSL. Estimates for comparison only.",
 

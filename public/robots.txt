@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nikosalonen.github.io/hsl-ticket-optimizer/sitemap.xml

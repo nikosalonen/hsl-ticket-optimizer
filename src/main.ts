@@ -18,6 +18,13 @@ function translateStaticDOM() {
     const key = el.dataset.i18nAria;
     if (key) el.setAttribute("aria-label", t(key));
   }
+  // Update canvas aria-labels
+  document
+    .getElementById("cost-comparison-chart")
+    ?.setAttribute("aria-label", t("chart.barChartAriaLabel"));
+  document
+    .getElementById("trips-cost-chart")
+    ?.setAttribute("aria-label", t("chart.lineChartAriaLabel"));
   updateMeta();
 }
 
@@ -137,9 +144,27 @@ function getThemeColor(cssVar: string, alpha?: number): string {
   return raw;
 }
 
+function getChartFontSize(): number {
+  return window.innerWidth < 640 ? 10 : 12;
+}
+
 // Keep references to charts so we can destroy and re-create them safely
 let costComparisonChart: Chart | null = null;
 let tripsCostChart: Chart | null = null;
+let tripsChartModal: Chart | null = null;
+
+// Store last trips chart params so modal can re-render
+let lastTripsChartParams: {
+  baseTripsPerWeek: number;
+  baseOptions: {
+    single: number;
+    season: number;
+    continuousMonthly?: number;
+    series10?: { price: number; journeys: number; validityDays: number };
+    series20?: { price: number; journeys: number; validityDays: number };
+  };
+  summerVacation: boolean;
+} | null = null;
 
 type CostView = "monthly" | "annual";
 let costView: CostView = "monthly";
@@ -224,7 +249,10 @@ function normalizeZonesInput(rawValue: string): string {
 
 type OptimalResult = ReturnType<typeof priceService.findOptimalOption>;
 
-function renderComparison(result: OptimalResult, summerVacation: boolean = false) {
+function renderComparison(
+  result: OptimalResult,
+  summerVacation: boolean = false,
+) {
   type RowKey =
     | "single"
     | "series10"
@@ -300,16 +328,22 @@ function renderComparison(result: OptimalResult, summerVacation: boolean = false
 
   // Sort by selected cost view for better visual hierarchy
   const isAnnual = costView === "annual";
-  const getCost = (r: (typeof rows)[number]) => isAnnual ? r.annualCost : r.cost;
+  const getCost = (r: (typeof rows)[number]) =>
+    isAnnual ? r.annualCost : r.cost;
   const sortedRows = [...rows].sort((a, b) => getCost(a) - getCost(b));
   const optimalRow = sortedRows[0];
+  const worstRow = sortedRows[sortedRows.length - 1] as
+    | (typeof sortedRows)[number]
+    | undefined;
 
   const list = sortedRows
     .map((r) => {
       const isOptimal = r === optimalRow;
-      const worstCost = getCost(sortedRows[sortedRows.length - 1]!) || 0;
+      const worstCost = worstRow ? getCost(worstRow) : 0;
       const savingsVsWorst = worstCost - getCost(r);
-      const savingsKey = isAnnual ? "results.savingsPerYear" : "results.savingsPerMonth";
+      const savingsKey = isAnnual
+        ? "results.savingsPerYear"
+        : "results.savingsPerMonth";
 
       // All template content is internally generated (ticket labels, numbers, SVG icons)
       return `
@@ -360,15 +394,16 @@ function renderComparison(result: OptimalResult, summerVacation: boolean = false
     })
     .join("");
 
-  const worstCost = getCost(sortedRows[sortedRows.length - 1]!) || 0;
-  const optimalSavings = optimalRow
-    ? worstCost - getCost(optimalRow)
-    : 0;
+  const worstCost = worstRow ? getCost(worstRow) : 0;
+  const optimalSavings = optimalRow ? worstCost - getCost(optimalRow) : 0;
   const heroValue = optimalRow ? getCost(optimalRow) : 0;
   const heroSuffix = isAnnual ? t("results.perYear") : t("results.perMonth");
   const savingsSuffix = isAnnual
     ? t("results.savingsPerYear", { amount: optimalSavings.toFixed(2) })
-    : t("results.savingsTotal", { amount: (optimalSavings).toFixed(2), annualAmount: (optimalSavings * (summerVacation ? 11 : 12)).toFixed(2) });
+    : t("results.savingsTotal", {
+        amount: optimalSavings.toFixed(2),
+        annualAmount: (optimalSavings * (summerVacation ? 11 : 12)).toFixed(2),
+      });
 
   // All template content is internally generated (labels, numbers, SVG icons)
   return `
@@ -430,6 +465,22 @@ function renderCostComparisonChart(result: OptimalResult) {
     data.push(result.series20.monthlyCost);
   }
 
+  // Highlight cheapest bar with success color, others with muted primary
+  const minValue = Math.min(...data);
+  const successBg = getThemeColor("--color-success", 0.25);
+  const successBorder = getThemeColor("--color-success");
+  const primaryBg = getThemeColor("--color-primary", 0.15);
+  const primaryBorder = getThemeColor("--color-primary", 0.5);
+
+  const backgroundColors = data.map((v) =>
+    v === minValue ? successBg : primaryBg,
+  );
+  const borderColors = data.map((v) =>
+    v === minValue ? successBorder : primaryBorder,
+  );
+
+  const fontSize = getChartFontSize();
+
   costComparisonChart = new Chart(ctx, {
     type: "bar",
     data: {
@@ -438,8 +489,8 @@ function renderCostComparisonChart(result: OptimalResult) {
         {
           label: t("chart.monthlyCostLabel"),
           data,
-          backgroundColor: getThemeColor("--color-primary", 0.2),
-          borderColor: getThemeColor("--color-primary"),
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
           borderWidth: 1,
           borderRadius: 4,
         },
@@ -449,11 +500,39 @@ function renderCostComparisonChart(result: OptimalResult) {
       responsive: true,
       maintainAspectRatio: true,
       aspectRatio: window.innerWidth < 640 ? 1.3 : 2.5,
-      plugins: { legend: { display: false }, tooltip: { enabled: true } },
+      animation: {
+        delay: (context) => context.dataIndex * 100,
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const val = context.parsed.y ?? 0;
+              if (val === minValue) {
+                return `${val.toFixed(2)} \u20AC (${t("results.best").toLowerCase()})`;
+              }
+              const diff = val - minValue;
+              return `${val.toFixed(2)} \u20AC (+${diff.toFixed(2)} \u20AC)`;
+            },
+          },
+        },
+      },
       scales: {
+        x: {
+          ticks: { font: { size: fontSize } },
+        },
         y: {
           beginAtZero: true,
-          title: { display: true, text: t("chart.euroPerMonth") },
+          title: {
+            display: true,
+            text: t("chart.euroPerMonth"),
+            font: { size: fontSize },
+          },
+          ticks: {
+            font: { size: fontSize },
+            callback: (value) => `${value} \u20AC`,
+          },
         },
       },
     },
@@ -471,6 +550,9 @@ async function renderTripsCostChart(
   },
   summerVacation: boolean = false,
 ) {
+  // Store params for modal re-render
+  lastTripsChartParams = { baseTripsPerWeek, baseOptions, summerVacation };
+
   const ctx = document.getElementById(
     "trips-cost-chart",
   ) as HTMLCanvasElement | null;
@@ -498,7 +580,217 @@ async function renderTripsCostChart(
   const series20Costs: number[] = [];
 
   for (const trips of tripsRange) {
-    const comparison = priceService.findOptimalOption(trips, baseOptions, summerVacation);
+    const comparison = priceService.findOptimalOption(
+      trips,
+      baseOptions,
+      summerVacation,
+    );
+    singleCosts.push(comparison.single.monthlyCost);
+    seasonCosts.push(comparison.season.monthlyCost);
+    contMonthlyCosts.push(comparison.continuousMonthly.monthlyCost);
+    if (comparison.series10)
+      series10Costs.push(comparison.series10.monthlyCost);
+    if (comparison.series20)
+      series20Costs.push(comparison.series20.monthlyCost);
+  }
+
+  const lineColors = [
+    getThemeColor("--color-primary"),
+    getThemeColor("--color-secondary"),
+    getThemeColor("--color-accent"),
+    getThemeColor("--color-info"),
+    getThemeColor("--color-warning"),
+  ];
+
+  const fontSize = getChartFontSize();
+
+  const datasets: Array<{
+    label: string;
+    data: number[];
+    borderColor: string;
+    backgroundColor: string;
+    tension: number;
+    pointRadius: number;
+    pointHoverRadius: number;
+  }> = [
+    {
+      label: t("chart.single"),
+      data: singleCosts,
+      borderColor: lineColors[0] ?? "#888",
+      backgroundColor: lineColors[0] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+    },
+    {
+      label: t("chart.season"),
+      data: seasonCosts,
+      borderColor: lineColors[1] ?? "#888",
+      backgroundColor: lineColors[1] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+    },
+    {
+      label: t("chart.continuous"),
+      data: contMonthlyCosts,
+      borderColor: lineColors[2] ?? "#888",
+      backgroundColor: lineColors[2] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+    },
+  ];
+  if (series10Costs.length)
+    datasets.push({
+      label: t("chart.series10"),
+      data: series10Costs,
+      borderColor: lineColors[3] ?? "#888",
+      backgroundColor: lineColors[3] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+    });
+  if (series20Costs.length)
+    datasets.push({
+      label: t("chart.series20"),
+      data: series20Costs,
+      borderColor: lineColors[4] ?? "#888",
+      backgroundColor: lineColors[4] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+    });
+
+  // Index of the user's current trips value within the range
+  const currentTripsIndex = tripsRange.indexOf(baseTripsPerWeek);
+
+  // Inline plugin: draw a dashed vertical line at the user's selected trips/week
+  const verticalLinePlugin = {
+    id: "verticalLine",
+    afterDraw: (chart: Chart) => {
+      if (currentTripsIndex < 0) return;
+      const meta = chart.getDatasetMeta(0);
+      const point = meta.data[currentTripsIndex];
+      if (!point) return;
+      const { ctx: drawCtx } = chart;
+      const yAxis = chart.scales.y;
+      if (!yAxis) return;
+      drawCtx.save();
+      drawCtx.beginPath();
+      drawCtx.setLineDash([6, 4]);
+      drawCtx.strokeStyle = getThemeColor("--color-base-content", 0.25);
+      drawCtx.lineWidth = 1.5;
+      drawCtx.moveTo(point.x, yAxis.top);
+      drawCtx.lineTo(point.x, yAxis.bottom);
+      drawCtx.stroke();
+      drawCtx.restore();
+    },
+  };
+
+  tripsCostChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: tripsRange.map((trips) => `${trips}`),
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: window.innerWidth < 640 ? 1.3 : 2.5,
+      plugins: {
+        legend: {
+          position: "top" as const,
+          labels: { font: { size: fontSize } },
+        },
+        tooltip: {
+          usePointStyle: true,
+          callbacks: {
+            label: (tooltipCtx) => {
+              const val = tooltipCtx.parsed.y ?? 0;
+              return `${tooltipCtx.dataset.label}: ${val.toFixed(2)} \u20AC`;
+            },
+            labelColor: (tooltipCtx) => {
+              const ds = tooltipCtx.dataset as unknown as {
+                borderColor?: string;
+              };
+              const color =
+                typeof ds?.borderColor === "string" ? ds.borderColor : "#666";
+              return {
+                borderColor: color,
+                backgroundColor: color,
+              } as unknown as {
+                borderColor: string;
+                backgroundColor: string;
+              };
+            },
+          },
+        },
+      },
+      interaction: { intersect: false, mode: "index" as const },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: t("chart.tripsPerWeek"),
+            font: { size: fontSize },
+          },
+          ticks: { font: { size: fontSize } },
+        },
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: t("chart.euroPerMonthAxis"),
+            font: { size: fontSize },
+          },
+          ticks: {
+            font: { size: fontSize },
+            callback: (value) => `${value} \u20AC`,
+          },
+        },
+      },
+    },
+    plugins: [verticalLinePlugin],
+  });
+}
+
+function renderTripsChartInModal() {
+  if (!lastTripsChartParams) return;
+  const { baseTripsPerWeek, baseOptions, summerVacation } =
+    lastTripsChartParams;
+
+  const ctx = document.getElementById(
+    "trips-cost-chart-modal",
+  ) as HTMLCanvasElement | null;
+  if (!ctx) return;
+
+  if (tripsChartModal) {
+    tripsChartModal.destroy();
+    tripsChartModal = null;
+  }
+
+  const tripsRange: number[] = [];
+  for (
+    let i = Math.max(1, baseTripsPerWeek - 10);
+    i <= baseTripsPerWeek + 10;
+    i++
+  ) {
+    tripsRange.push(i);
+  }
+
+  const singleCosts: number[] = [];
+  const seasonCosts: number[] = [];
+  const contMonthlyCosts: number[] = [];
+  const series10Costs: number[] = [];
+  const series20Costs: number[] = [];
+
+  for (const trips of tripsRange) {
+    const comparison = priceService.findOptimalOption(
+      trips,
+      baseOptions,
+      summerVacation,
+    );
     singleCosts.push(comparison.single.monthlyCost);
     seasonCosts.push(comparison.season.monthlyCost);
     contMonthlyCosts.push(comparison.continuousMonthly.monthlyCost);
@@ -521,24 +813,36 @@ async function renderTripsCostChart(
     data: number[];
     borderColor: string;
     backgroundColor: string;
+    tension: number;
+    pointRadius: number;
+    pointHoverRadius: number;
   }> = [
     {
       label: t("chart.single"),
       data: singleCosts,
       borderColor: lineColors[0] ?? "#888",
       backgroundColor: lineColors[0] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
     },
     {
       label: t("chart.season"),
       data: seasonCosts,
       borderColor: lineColors[1] ?? "#888",
       backgroundColor: lineColors[1] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
     },
     {
       label: t("chart.continuous"),
       data: contMonthlyCosts,
       borderColor: lineColors[2] ?? "#888",
       backgroundColor: lineColors[2] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
     },
   ];
   if (series10Costs.length)
@@ -547,6 +851,9 @@ async function renderTripsCostChart(
       data: series10Costs,
       borderColor: lineColors[3] ?? "#888",
       backgroundColor: lineColors[3] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
     });
   if (series20Costs.length)
     datasets.push({
@@ -554,9 +861,36 @@ async function renderTripsCostChart(
       data: series20Costs,
       borderColor: lineColors[4] ?? "#888",
       backgroundColor: lineColors[4] ?? "#888",
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
     });
 
-  tripsCostChart = new Chart(ctx, {
+  const currentTripsIndex = tripsRange.indexOf(baseTripsPerWeek);
+
+  const verticalLinePlugin = {
+    id: "verticalLineModal",
+    afterDraw: (chart: Chart) => {
+      if (currentTripsIndex < 0) return;
+      const meta = chart.getDatasetMeta(0);
+      const point = meta.data[currentTripsIndex];
+      if (!point) return;
+      const { ctx: drawCtx } = chart;
+      const yAxis = chart.scales.y;
+      if (!yAxis) return;
+      drawCtx.save();
+      drawCtx.beginPath();
+      drawCtx.setLineDash([6, 4]);
+      drawCtx.strokeStyle = getThemeColor("--color-base-content", 0.25);
+      drawCtx.lineWidth = 1.5;
+      drawCtx.moveTo(point.x, yAxis.top);
+      drawCtx.lineTo(point.x, yAxis.bottom);
+      drawCtx.stroke();
+      drawCtx.restore();
+    },
+  };
+
+  tripsChartModal = new Chart(ctx, {
     type: "line",
     data: {
       labels: tripsRange.map((trips) => `${trips}`),
@@ -565,12 +899,19 @@ async function renderTripsCostChart(
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      aspectRatio: window.innerWidth < 640 ? 1.3 : 2.5,
+      aspectRatio: 1.8,
       plugins: {
-        legend: { position: "top" as const },
+        legend: {
+          position: "top" as const,
+          labels: { font: { size: 13 } },
+        },
         tooltip: {
           usePointStyle: true,
           callbacks: {
+            label: (tooltipCtx) => {
+              const val = tooltipCtx.parsed.y ?? 0;
+              return `${tooltipCtx.dataset.label}: ${val.toFixed(2)} \u20AC`;
+            },
             labelColor: (tooltipCtx) => {
               const ds = tooltipCtx.dataset as unknown as {
                 borderColor?: string;
@@ -590,15 +931,45 @@ async function renderTripsCostChart(
       },
       interaction: { intersect: false, mode: "index" as const },
       scales: {
-        x: { title: { display: true, text: t("chart.tripsPerWeek") } },
+        x: {
+          title: {
+            display: true,
+            text: t("chart.tripsPerWeek"),
+            font: { size: 13 },
+          },
+          ticks: { font: { size: 12 } },
+        },
         y: {
           beginAtZero: true,
-          title: { display: true, text: t("chart.euroPerMonthAxis") },
+          title: {
+            display: true,
+            text: t("chart.euroPerMonthAxis"),
+            font: { size: 13 },
+          },
+          ticks: { font: { size: 12 }, callback: (value) => `${value} \u20AC` },
         },
       },
     },
+    plugins: [verticalLinePlugin],
   });
 }
+
+// Wire expand button and modal lifecycle
+const tripsChartModal$ =
+  document.querySelector<HTMLDialogElement>("#trips-chart-modal");
+
+document.getElementById("expand-trips-chart")?.addEventListener("click", () => {
+  tripsChartModal$?.showModal();
+  // Render after the modal is visible so the canvas has dimensions
+  requestAnimationFrame(() => renderTripsChartInModal());
+});
+
+tripsChartModal$?.addEventListener("close", () => {
+  if (tripsChartModal) {
+    tripsChartModal.destroy();
+    tripsChartModal = null;
+  }
+});
 
 function debounce(fn: () => void, ms: number) {
   let id: ReturnType<typeof setTimeout>;
@@ -625,7 +996,8 @@ async function calculate() {
 
   const tripsPerWeek = Number(tripsInput?.value || "10");
   const summerVacation =
-    document.querySelector<HTMLInputElement>("#summerVacation")?.checked ?? false;
+    document.querySelector<HTMLInputElement>("#summerVacation")?.checked ??
+    false;
   const homemunicipality = (
     municipalitySelect?.value || "helsinki"
   ).toLowerCase();
@@ -680,7 +1052,11 @@ async function calculate() {
     // Delay chart rendering during crossfade so canvases exist in the DOM
     const renderCharts = () => {
       renderCostComparisonChart(comparison);
-      void renderTripsCostChart(tripsPerWeek, comparisonOptions, summerVacation);
+      void renderTripsCostChart(
+        tripsPerWeek,
+        comparisonOptions,
+        summerVacation,
+      );
     };
 
     if (isSwap) {
@@ -722,8 +1098,7 @@ if (municipalityEl) {
   municipalityEl.addEventListener("change", () => void calculate());
 }
 
-const vacationEl =
-  document.querySelector<HTMLInputElement>("#summerVacation");
+const vacationEl = document.querySelector<HTMLInputElement>("#summerVacation");
 if (vacationEl) {
   vacationEl.addEventListener("change", () => void calculate());
 }

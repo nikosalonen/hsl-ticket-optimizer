@@ -14,6 +14,12 @@
         />
         <link rel="canonical" href="https://nikosalonen.github.io/hsl-ticket-optimizer/" />
 
+        <!-- hreflang alternates -->
+        <link rel="alternate" hreflang="fi" href="https://nikosalonen.github.io/hsl-ticket-optimizer/?lang=fi" />
+        <link rel="alternate" hreflang="en" href="https://nikosalonen.github.io/hsl-ticket-optimizer/?lang=en" />
+        <link rel="alternate" hreflang="sv" href="https://nikosalonen.github.io/hsl-ticket-optimizer/?lang=sv" />
+        <link rel="alternate" hreflang="x-default" href="https://nikosalonen.github.io/hsl-ticket-optimizer/" />
+
         <!-- Open Graph -->
         <meta property="og:type" content="website" />
         <meta property="og:title" content="HSL-lippulaskuri — Edullisin lippu työmatkallesi" />
@@ -21,14 +27,20 @@
         <meta property="og:url" content="https://nikosalonen.github.io/hsl-ticket-optimizer/" />
         <meta property="og:locale" content="fi_FI" />
         <meta property="og:site_name" content="HSL-lippulaskuri" />
+        <meta property="og:image" content="https://nikosalonen.github.io/hsl-ticket-optimizer/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="HSL-lippulaskuri — Vertaa HSL-lippuja ja löydä edullisin vaihtoehto" />
 
         <!-- Twitter Card -->
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="HSL-lippulaskuri — Edullisin lippu työmatkallesi" />
         <meta name="twitter:description" content="Vertaa HSL-lippuja ja löydä edullisin vaihtoehto työmatkallesi." />
+        <meta name="twitter:image" content="https://nikosalonen.github.io/hsl-ticket-optimizer/og-image.png" />
 
         <meta name="robots" content="index, follow" />
         <meta name="theme-color" content="#1a6fa0" />
+        <link rel="manifest" href="/hsl-ticket-optimizer/manifest.json" />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -273,8 +285,8 @@
                 <div id="results" class="results hidden mt-10">
                     <div id="cost-view-toggle" class="flex justify-end mb-4">
                         <div class="join">
-                            <button class="join-item btn btn-sm btn-active" data-cost-view="monthly" data-i18n="results.viewMonthly">Kuukausi</button>
-                            <button class="join-item btn btn-sm" data-cost-view="annual" data-i18n="results.viewAnnual">Vuosi</button>
+                            <button type="button" class="join-item btn btn-sm btn-active" data-cost-view="monthly" data-i18n="results.viewMonthly">Kuukausi</button>
+                            <button type="button" class="join-item btn btn-sm" data-cost-view="annual" data-i18n="results.viewAnnual">Vuosi</button>
                         </div>
                     </div>
                     <div id="results-content"></div>
@@ -289,25 +301,59 @@
                                 >
                                     Kuukausikustannus
                                 </h3>
-                                <canvas id="cost-comparison-chart"></canvas>
+                                <canvas id="cost-comparison-chart" role="img" aria-label="Pylväskaavio kuukausikustannuksista lipputyypeittäin"></canvas>
                             </div>
                         </div>
                         <div
                             class="card bg-base-100 shadow border border-base-200"
                         >
                             <div class="card-body">
-                                <h3
-                                    class="text-sm font-semibold uppercase tracking-widest text-base-content/40 mb-2"
-                                    data-i18n="chart.costVsTrips"
-                                >
-                                    Hinta vs. matkat
-                                </h3>
-                                <canvas id="trips-cost-chart"></canvas>
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3
+                                        class="text-sm font-semibold uppercase tracking-widest text-base-content/40"
+                                        data-i18n="chart.costVsTrips"
+                                    >
+                                        Hinta vs. matkat
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        id="expand-trips-chart"
+                                        class="btn btn-ghost btn-xs btn-square"
+                                        data-i18n-aria="chart.expand"
+                                        aria-label="Suurenna kaavio"
+                                    >
+                                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9m11.25-5.25v4.5m0-4.5h-4.5m4.5 0L15 9m-11.25 11.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25 5.25v-4.5m0 4.5h-4.5m4.5 0L15 15"/></svg>
+                                    </button>
+                                </div>
+                                <canvas id="trips-cost-chart" role="img" aria-label="Viivakaavio kustannuksista matkojen määrän mukaan"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
+
+            <!-- Maximized trips chart modal -->
+            <dialog id="trips-chart-modal" class="modal">
+                <div class="modal-box w-11/12 max-w-5xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3
+                            class="text-sm font-semibold uppercase tracking-widest text-base-content/40"
+                            data-i18n="chart.costVsTrips"
+                        >
+                            Hinta vs. matkat
+                        </h3>
+                        <form method="dialog">
+                            <button type="submit" class="btn btn-sm btn-circle btn-ghost" aria-label="Close">
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                    <canvas id="trips-cost-chart-modal" role="img" aria-label="Viivakaavio kustannuksista matkojen määrän mukaan"></canvas>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button type="submit">close</button>
+                </form>
+            </dialog>
 
             <footer
                 class="mt-16 py-6 text-center text-sm text-base-content/30"

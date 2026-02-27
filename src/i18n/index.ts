@@ -38,8 +38,11 @@ export function t(
 }
 
 export function initI18n(): void {
+  const urlParam = new URLSearchParams(window.location.search).get("lang");
+  const fromUrl = urlParam && urlParam in LOCALES ? (urlParam as Locale) : null;
   const saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
-  const locale = saved && saved in LOCALES ? (saved as Locale) : DEFAULT_LOCALE;
+  const locale =
+    fromUrl ?? (saved && saved in LOCALES ? (saved as Locale) : DEFAULT_LOCALE);
   currentLocale = locale;
   currentMap = LOCALES[locale];
   document.documentElement.lang = locale;

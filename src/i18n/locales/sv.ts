@@ -87,6 +87,12 @@ export const sv: TranslationMap = {
   "chart.series10": "Seriebiljett 10",
   "chart.series20": "Seriebiljett 20",
 
+  "chart.expand": "Förstora diagram",
+  "chart.barChartAriaLabel":
+    "Stapeldiagram som jämför månadskostnader per biljetttyp",
+  "chart.lineChartAriaLabel":
+    "Linjediagram som visar kostnadstrender efter antal resor",
+
   // Footer
   "footer.disclaimer": "Priser från HRT. Uppskattningar endast för jämförelse.",
 

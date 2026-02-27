@@ -87,6 +87,12 @@ export const fi: TranslationMap = {
   "chart.series10": "Sarjalippu 10",
   "chart.series20": "Sarjalippu 20",
 
+  "chart.expand": "Suurenna kaavio",
+  "chart.barChartAriaLabel":
+    "Pylväskaavio kuukausikustannuksista lipputyypeittäin",
+  "chart.lineChartAriaLabel":
+    "Viivakaavio kustannuksista matkojen määrän mukaan",
+
   // Footer
   "footer.disclaimer": "Hinnat HSL:ltä. Arviot vain vertailua varten.",
 

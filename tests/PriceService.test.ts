@@ -1582,8 +1582,15 @@ describe("PriceService utility methods", () => {
     it("should reduce series ticket annual cost to 48 weeks when summerVacation=true", () => {
       const testService = new PriceService();
       const seriesTicket = { price: 12.5, journeys: 10, validityDays: 14 };
-      const withoutVacation = testService.calculateSeriesTicketCost(5, seriesTicket);
-      const withVacation = testService.calculateSeriesTicketCost(5, seriesTicket, true);
+      const withoutVacation = testService.calculateSeriesTicketCost(
+        5,
+        seriesTicket,
+      );
+      const withVacation = testService.calculateSeriesTicketCost(
+        5,
+        seriesTicket,
+        true,
+      );
 
       // Monthly cost unchanged
       expect(withVacation.monthlyCost).toBe(withoutVacation.monthlyCost);
@@ -1619,7 +1626,10 @@ describe("PriceService utility methods", () => {
 
     it("should not reduce continuous monthly annual cost (360d commitment, cannot pause)", () => {
       const testService = new PriceService();
-      const result = testService.calculateContinuousMonthlyTicketCost(64.7, 58.0);
+      const result = testService.calculateContinuousMonthlyTicketCost(
+        64.7,
+        58.0,
+      );
 
       // Always 12 months — continuous subscription cannot be paused
       expect(result.monthlyCost).toBe(58.0);
@@ -1638,16 +1648,28 @@ describe("PriceService utility methods", () => {
       const withVacation = testService.findOptimalOption(5, prices, true);
 
       // Monthly costs unchanged
-      expect(withVacation.single.monthlyCost).toBe(withoutVacation.single.monthlyCost);
-      expect(withVacation.season.monthlyCost).toBe(withoutVacation.season.monthlyCost);
-      expect(withVacation.continuousMonthly.monthlyCost).toBe(withoutVacation.continuousMonthly.monthlyCost);
+      expect(withVacation.single.monthlyCost).toBe(
+        withoutVacation.single.monthlyCost,
+      );
+      expect(withVacation.season.monthlyCost).toBe(
+        withoutVacation.season.monthlyCost,
+      );
+      expect(withVacation.continuousMonthly.monthlyCost).toBe(
+        withoutVacation.continuousMonthly.monthlyCost,
+      );
 
       // Annual costs reduced for single and season
-      expect(withVacation.single.annualCost).toBeLessThan(withoutVacation.single.annualCost);
-      expect(withVacation.season.annualCost).toBeLessThan(withoutVacation.season.annualCost);
+      expect(withVacation.single.annualCost).toBeLessThan(
+        withoutVacation.single.annualCost,
+      );
+      expect(withVacation.season.annualCost).toBeLessThan(
+        withoutVacation.season.annualCost,
+      );
 
       // Continuous monthly unchanged (360d commitment, cannot pause)
-      expect(withVacation.continuousMonthly.annualCost).toBe(withoutVacation.continuousMonthly.annualCost);
+      expect(withVacation.continuousMonthly.annualCost).toBe(
+        withoutVacation.continuousMonthly.annualCost,
+      );
     });
   });
 });
