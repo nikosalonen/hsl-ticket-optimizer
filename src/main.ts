@@ -264,6 +264,10 @@ function hideResults() {
   }
 }
 
+/**
+ * Converts user-facing zone letters (e.g. `"ABC"`) to the numeric API zone code.
+ * If the input is already numeric or unrecognised, it is returned as-is.
+ */
 function normalizeZonesInput(rawValue: string): string {
   // Accept zone letters from UI and convert to API zone code via helper
   const letters = rawValue.trim();
@@ -275,6 +279,13 @@ function normalizeZonesInput(rawValue: string): string {
 
 type OptimalResult = ReturnType<typeof priceService.findOptimalOption>;
 
+/**
+ * Builds the ticket-comparison HTML cards sorted by the active {@link costView}.
+ * Includes a hero stat banner for the cheapest option and expandable calculation details.
+ * @param result - Output of {@link priceService.findOptimalOption}.
+ * @param summerVacation - Whether the user opted into the summer-vacation discount.
+ * @returns An HTML string ready to be injected into the results container.
+ */
 function renderComparison(
   result: OptimalResult,
   summerVacation: boolean = false,
@@ -454,6 +465,10 @@ function renderComparison(
 	`;
 }
 
+/**
+ * Renders (or re-renders) the bar chart comparing monthly costs across ticket types.
+ * Destroys any existing chart instance before creating a new one.
+ */
 function renderCostComparisonChart(result: OptimalResult) {
   const ctx = document.getElementById(
     "cost-comparison-chart",
@@ -564,6 +579,14 @@ function renderCostComparisonChart(result: OptimalResult) {
   });
 }
 
+/**
+ * Renders the line chart showing how monthly cost varies with trips/week.
+ * A dashed vertical line marks the user's current selection.
+ * Parameters are also stored so the modal can re-render at a larger size.
+ * @param baseTripsPerWeek - The user's selected trips per week.
+ * @param baseOptions - Per-ticket-type price inputs for the cost model.
+ * @param summerVacation - Whether summer-vacation discount applies.
+ */
 async function renderTripsCostChart(
   baseTripsPerWeek: number,
   baseOptions: {
@@ -780,6 +803,7 @@ async function renderTripsCostChart(
   });
 }
 
+/** Re-renders the trips-vs-cost line chart inside the full-screen modal using the last stored parameters. */
 function renderTripsChartInModal() {
   if (!lastTripsChartParams) return;
   const { baseTripsPerWeek, baseOptions, summerVacation } =
@@ -1008,6 +1032,10 @@ function debounce(fn: () => void, ms: number) {
   };
 }
 
+/**
+ * Main calculation pipeline. Reads form inputs, fetches ticket prices,
+ * computes the optimal option, and renders the comparison cards and charts.
+ */
 async function calculate() {
   const zonesSelect = document.querySelector<HTMLSelectElement>("#zones");
   const tripsInput = document.querySelector<HTMLInputElement>("#tripsPerWeek");
