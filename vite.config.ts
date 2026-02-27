@@ -1,16 +1,11 @@
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [tailwindcss()],
   base: "/hsl-ticket-optimizer/",
   build: {
-    outDir: "dist",
-    assetsDir: "assets",
     target: "es2020",
-  },
-  resolve: {
-    extensions: [".ts", ".js"],
   },
   server: {
     port: 3000,
@@ -19,6 +14,5 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./tests/setup.js"],
   },
 });

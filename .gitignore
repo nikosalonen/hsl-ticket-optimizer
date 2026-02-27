@@ -19,7 +19,7 @@ build/
 *.swo
 
 # OS files
-.DS_Store
+**/.DS_Store
 Thumbs.db
 
 # Logs
@@ -34,12 +34,12 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage
 coverage/
 *.lcov
 
-# Vitest
-coverage/
+# TypeScript
+*.tsbuildinfo
 
 # Kiro design tool
 .kiro/
