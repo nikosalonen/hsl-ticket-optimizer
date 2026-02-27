@@ -33,7 +33,7 @@ export interface SeriesTicket {
 export interface SeasonTicket {
   price: number;
   durationDays: number;
-  type: 'season' | 'continuous';
+  type: "season" | "continuous";
 }
 
 /**
@@ -99,7 +99,15 @@ export interface ValidationResult {
  * Ticket type option for form
  */
 export interface TicketOption {
-  type: 'single' | 'series10' | 'series20' | 'daily' | 'monthly' | 'continuousMonthly' | 'season' | 'saverSubscription';
+  type:
+    | "single"
+    | "series10"
+    | "series20"
+    | "daily"
+    | "monthly"
+    | "continuousMonthly"
+    | "season"
+    | "saverSubscription";
   name: string;
   enabled: boolean;
 }
@@ -199,7 +207,7 @@ export interface HSLMonthlyResponse {
 /**
  * Error types for API handling
  */
-export type ErrorType = 'network' | 'cors' | 'invalid_response' | 'rate_limit';
+export type ErrorType = "network" | "cors" | "invalid_response" | "rate_limit";
 
 /**
  * Custom API error class
@@ -224,7 +232,7 @@ export interface ValidationRule {
   required: boolean;
   min?: number;
   max?: number;
-  type?: 'integer' | 'string';
+  type?: "integer" | "string";
   validValues?: string[];
   minSelected?: number;
 }
