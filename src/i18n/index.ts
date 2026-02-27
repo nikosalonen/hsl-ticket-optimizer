@@ -44,14 +44,15 @@ export function t(
 export function initI18n(): void {
   const urlParam = new URLSearchParams(window.location.search).get("lang");
   const fromUrl = urlParam && urlParam in LOCALES ? (urlParam as Locale) : null;
-  let saved: Locale | null = null;
+  let saved: string | null = null;
   try {
-    saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
+    saved = localStorage.getItem(STORAGE_KEY);
   } catch {
     // Ignore storage errors (private mode, restricted access)
   }
-  const locale =
-    fromUrl ?? (saved && saved in LOCALES ? (saved as Locale) : DEFAULT_LOCALE);
+  const validSaved: Locale | null =
+    saved !== null && saved in LOCALES ? (saved as Locale) : null;
+  const locale = fromUrl ?? validSaved ?? DEFAULT_LOCALE;
   currentLocale = locale;
   currentMap = LOCALES[locale];
   document.documentElement.lang = locale;
