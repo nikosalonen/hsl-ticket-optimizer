@@ -43,6 +43,8 @@ describe("CacheManager", () => {
 
   afterEach(() => {
     localStorageMock.clear();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   describe("set and get operations", () => {
