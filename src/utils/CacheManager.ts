@@ -240,6 +240,19 @@ export class CacheManager {
     }
   }
 
+  private isMalformedItem(cacheItem: CacheItem): boolean {
+    return (
+      !Number.isFinite(cacheItem.timestamp) ||
+      !Number.isFinite(cacheItem.ttl) ||
+      cacheItem.timestamp < 0 ||
+      cacheItem.ttl < 0
+    );
+  }
+
+  private isItemExpired(cacheItem: CacheItem): boolean {
+    return Date.now() - cacheItem.timestamp > cacheItem.ttl;
+  }
+
   /**
    * Generate cache key with prefix
    * @param key Original key
