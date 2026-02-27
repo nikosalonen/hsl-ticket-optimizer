@@ -1,13 +1,35 @@
 <!doctype html>
-<html lang="fi">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>HSL Ticket Optimizer</title>
+        <title>HSL Fare Finder — Cheapest Ticket for Your Commute</title>
         <meta
             name="description"
-            content="Find the most cost-effective HSL public transport ticket option based on your travel patterns"
+            content="Compare HSL single, series, season, and monthly tickets side by side. Enter your zones and trips to instantly see which Helsinki Region transport pass saves you the most money."
         />
+        <meta
+            name="keywords"
+            content="HSL, lippu, laskuri, Helsinki, joukkoliikenne, matkalippu, kausilippu, sarjalippu, public transport, ticket calculator, fare comparison"
+        />
+        <link rel="canonical" href="https://nikosalonen.github.io/hsl-ticket-optimizer/" />
+
+        <!-- Open Graph -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="HSL Fare Finder — Cheapest Ticket for Your Commute" />
+        <meta property="og:description" content="Compare HSL single, series, season, and monthly tickets side by side. Enter your zones and trips to instantly find the cheapest option." />
+        <meta property="og:url" content="https://nikosalonen.github.io/hsl-ticket-optimizer/" />
+        <meta property="og:locale" content="fi_FI" />
+        <meta property="og:site_name" content="HSL Fare Finder" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="HSL Fare Finder — Cheapest Ticket for Your Commute" />
+        <meta name="twitter:description" content="Compare HSL ticket types and find the cheapest option for your Helsinki Region commute." />
+
+        <meta name="robots" content="index, follow" />
+        <meta name="theme-color" content="#1a6fa0" />
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -15,6 +37,25 @@
             rel="stylesheet"
         />
         <link rel="stylesheet" href="/src/styles/main.css" />
+
+        <!-- Structured Data -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "HSL Fare Finder",
+            "url": "https://nikosalonen.github.io/hsl-ticket-optimizer/",
+            "description": "Compare HSL ticket types and find the cheapest public transport pass for your Helsinki Region commute.",
+            "applicationCategory": "UtilityApplication",
+            "operatingSystem": "Any",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "EUR"
+            }
+        }
+        </script>
+
         <script
             src="https://cdn.counter.dev/script.js"
             data-id="da3ed73f-eedb-4dd0-acac-8e7366f8508e"
@@ -23,16 +64,40 @@
     </head>
     <body>
         <div id="app" class="mx-auto max-w-3xl px-5 py-8 min-h-screen">
-            <header class="mb-10">
-                <h1
-                    class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight"
+            <header class="mb-10 flex items-start justify-between gap-4">
+                <div>
+                    <h1
+                        class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight"
+                    >
+                        HSL Fare<br class="hidden sm:block" />
+                        <span class="text-primary">Finder</span>
+                    </h1>
+                    <p class="mt-2 text-base-content/50 text-xl">
+                        Find the cheapest ticket for your commute.
+                    </p>
+                </div>
+                <div class="flex items-center gap-1 mt-1">
+                <a
+                    href="https://github.com/nikosalonen/hsl-ticket-optimizer"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-ghost btn-circle"
+                    aria-label="View source on GitHub"
                 >
-                    HSL Ticket<br class="hidden sm:block" />
-                    <span class="text-primary">Optimizer</span>
-                </h1>
-                <p class="mt-2 text-base-content/50 text-lg">
-                    Find the cheapest way to ride.
-                </p>
+                    <svg class="size-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                </a>
+                <button
+                    id="theme-toggle"
+                    type="button"
+                    class="btn btn-ghost btn-circle"
+                    aria-label="Toggle dark mode"
+                >
+                    <!-- Sun icon (shown in dark mode) -->
+                    <svg class="theme-icon-light hidden size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg>
+                    <!-- Moon icon (shown in light mode) -->
+                    <svg class="theme-icon-dark hidden size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></svg>
+                </button>
+                </div>
             </header>
 
             <main>
@@ -45,7 +110,7 @@
                             <div class="form-control">
                                 <label for="zones" class="label pb-1">
                                     <span
-                                        class="text-xs font-semibold uppercase tracking-widest text-base-content/50"
+                                        class="text-sm font-semibold uppercase tracking-widest text-base-content/50"
                                         >Zones</span
                                     >
                                 </label>
@@ -53,7 +118,7 @@
                                     id="zones"
                                     name="zones"
                                     required
-                                    class="select select-bordered w-full"
+                                    class="select select-bordered select-xl w-full text-base"
                                 >
                                     <option value="">Select zones</option>
                                     <option value="AB">AB</option>
@@ -68,7 +133,7 @@
                             <div class="form-control">
                                 <label for="homemunicipality" class="label pb-1">
                                     <span
-                                        class="text-xs font-semibold uppercase tracking-widest text-base-content/50"
+                                        class="text-sm font-semibold uppercase tracking-widest text-base-content/50"
                                         >Municipality</span
                                     >
                                 </label>
@@ -76,7 +141,7 @@
                                     id="homemunicipality"
                                     name="homemunicipality"
                                     required
-                                    class="select select-bordered w-full"
+                                    class="select select-bordered select-xl w-full text-base"
                                 >
                                     <option value="helsinki" selected>
                                         Helsinki
@@ -124,7 +189,7 @@
                         <div class="form-control">
                             <label for="tripsPerWeek" class="label pb-1">
                                 <span
-                                    class="text-xs font-semibold uppercase tracking-widest text-base-content/50"
+                                    class="text-sm font-semibold uppercase tracking-widest text-base-content/50"
                                     >Trips per week</span
                                 >
                             </label>
@@ -135,7 +200,7 @@
                                     >10</span
                                 >
                                 <span
-                                    class="text-base-content/40 text-sm font-medium tracking-wide"
+                                    class="text-base-content/40 text-base font-medium tracking-wide"
                                     >trips / week</span
                                 >
                             </div>
@@ -149,7 +214,7 @@
                                 class="range range-primary w-full"
                             />
                             <div
-                                class="flex justify-between text-[11px] text-base-content/30 mt-1 px-0.5 font-medium"
+                                class="flex justify-between text-xs text-base-content/30 mt-1 px-0.5 font-medium"
                             >
                                 <span>1</span>
                                 <span>20</span>
@@ -165,7 +230,7 @@
                     aria-live="polite"
                 >
                     <span class="loading loading-spinner loading-lg"></span>
-                    <p class="mt-3 text-sm">Fetching prices from HSL...</p>
+                    <p class="mt-3 text-base">Fetching prices from HSL...</p>
                 </div>
 
                 <div
@@ -184,7 +249,7 @@
                         >
                             <div class="card-body">
                                 <h3
-                                    class="text-xs font-semibold uppercase tracking-widest text-base-content/40 mb-2"
+                                    class="text-sm font-semibold uppercase tracking-widest text-base-content/40 mb-2"
                                 >
                                     Monthly Cost
                                 </h3>
@@ -196,7 +261,7 @@
                         >
                             <div class="card-body">
                                 <h3
-                                    class="text-xs font-semibold uppercase tracking-widest text-base-content/40 mb-2"
+                                    class="text-sm font-semibold uppercase tracking-widest text-base-content/40 mb-2"
                                 >
                                     Cost vs. Trips
                                 </h3>
@@ -208,7 +273,7 @@
             </main>
 
             <footer
-                class="mt-16 py-6 text-center text-xs text-base-content/30"
+                class="mt-16 py-6 text-center text-sm text-base-content/30"
             >
                 <p>Prices from HSL. Estimates for comparison only.</p>
             </footer>

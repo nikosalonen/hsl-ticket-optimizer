@@ -3,6 +3,42 @@
 import Chart from "chart.js/auto";
 import { PriceService, priceService } from "./services/PriceService.js";
 
+// --------------- Theme toggle ---------------
+
+function getSystemTheme(): "light" | "dark" {
+	return window.matchMedia("(prefers-color-scheme: dark)").matches
+		? "dark"
+		: "light";
+}
+
+function applyTheme(theme: "light" | "dark") {
+	document.documentElement.setAttribute("data-theme", theme);
+	// Show the opposite icon so the user can switch
+	document.querySelector(".theme-icon-light")?.classList.toggle("hidden", theme === "light");
+	document.querySelector(".theme-icon-dark")?.classList.toggle("hidden", theme === "dark");
+}
+
+function initTheme() {
+	const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+	applyTheme(saved ?? getSystemTheme());
+
+	document.getElementById("theme-toggle")?.addEventListener("click", () => {
+		const current = document.documentElement.getAttribute("data-theme") ?? getSystemTheme();
+		const next = current === "dark" ? "light" : "dark";
+		localStorage.setItem("theme", next);
+		applyTheme(next);
+	});
+
+	// Follow system changes when no explicit preference is saved
+	window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+		if (!localStorage.getItem("theme")) {
+			applyTheme(getSystemTheme());
+		}
+	});
+}
+
+initTheme();
+
 // Heroicons SVG icons for ticket types
 const ICONS = {
 	ticket: `<svg class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"/></svg>`,
@@ -182,7 +218,7 @@ function renderComparison(result: OptimalResult) {
 								<span class="text-primary">${r.icon}</span>
 								<div class="min-w-0">
 									<h3 class="font-semibold leading-tight truncate">${r.label}</h3>
-									<p class="text-xs text-base-content/50">${r.description}</p>
+									<p class="text-sm text-base-content/50">${r.description}</p>
 								</div>
 							</div>
 							${isOptimal ? `<span class="badge badge-primary badge-sm gap-1 shrink-0">${ICONS.star} Best</span>` : ""}
@@ -190,24 +226,24 @@ function renderComparison(result: OptimalResult) {
 
 						<div class="grid grid-cols-2 gap-3 p-3 rounded-box bg-base-200/60">
 							<div>
-								<span class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold">Monthly</span>
+								<span class="text-xs uppercase tracking-wider text-base-content/40 font-semibold">Monthly</span>
 								<div class="font-bold text-lg tabular-nums">\u20AC${r.cost.toFixed(2)}</div>
 							</div>
 							<div>
-								<span class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold">Annual</span>
+								<span class="text-xs uppercase tracking-wider text-base-content/40 font-semibold">Annual</span>
 								<div class="font-bold text-lg tabular-nums">\u20AC${r.annualCost.toFixed(2)}</div>
 							</div>
 						</div>
 
 						${
 							savingsVsWorst > 0
-								? `<p class="text-xs text-success font-medium">Save \u20AC${savingsVsWorst.toFixed(2)}/mo vs most expensive</p>`
+								? `<p class="text-sm text-success font-medium">Save \u20AC${savingsVsWorst.toFixed(2)}/mo vs most expensive</p>`
 								: ""
 						}
 
 						<details class="collapse collapse-arrow bg-base-200/60 rounded-box">
-							<summary class="collapse-title text-xs font-medium min-h-0 py-2 px-3">How this is calculated</summary>
-							<div class="collapse-content px-3"><p class="text-xs text-base-content/60">${r.calc}</p></div>
+							<summary class="collapse-title text-sm font-medium min-h-0 py-2 px-3">How this is calculated</summary>
+							<div class="collapse-content px-3"><p class="text-sm text-base-content/60">${r.calc}</p></div>
 						</details>
 					</div>
 				</div>
@@ -224,7 +260,7 @@ function renderComparison(result: OptimalResult) {
 			<div class="stat place-items-center gap-0">
 				<div class="stat-title text-primary-content/50">Best Option</div>
 				<div class="stat-value tabular-nums text-3xl sm:text-4xl">\u20AC${optimalRow?.cost.toFixed(2) || "0"}<span class="text-base font-medium text-primary-content/50">/mo</span></div>
-				<div class="stat-desc text-primary-content/60 text-sm">${optimalRow?.label || result.optimal}</div>
+				<div class="stat-desc text-primary-content/60 text-base">${optimalRow?.label || result.optimal}</div>
 				${
 					optimalSavings > 0
 						? `<div class="stat-desc text-primary-content/70 mt-1">Save \u20AC${optimalSavings.toFixed(2)}/mo (\u20AC${(optimalSavings * 12).toFixed(2)}/yr)</div>`
@@ -234,7 +270,7 @@ function renderComparison(result: OptimalResult) {
 		</div>
 
 		<div>
-			<h3 class="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-4">All Options</h3>
+			<h3 class="text-sm font-semibold text-base-content/40 uppercase tracking-widest mb-4">All Options</h3>
 			<div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 				${list}
 			</div>
