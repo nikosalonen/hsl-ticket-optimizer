@@ -4,3 +4,31 @@
   themes: light --default, dark --prefersdark;
 }
 
+@theme {
+  --font-sans: 'Outfit', system-ui, sans-serif;
+}
+
+/* Entrance animation for results section */
+.animate-in {
+  animation: fade-slide-in 0.4s ease-out;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Prominent trip counter */
+.trips-value {
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
