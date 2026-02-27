@@ -9,6 +9,7 @@ import { PriceService, priceService } from "./services/PriceService.js";
 
 initI18n();
 
+/** Translates all DOM elements bearing `data-i18n` or `data-i18n-aria` attributes and updates page metadata. */
 function translateStaticDOM() {
   for (const el of document.querySelectorAll<HTMLElement>("[data-i18n]")) {
     const key = el.dataset.i18n;
@@ -28,6 +29,7 @@ function translateStaticDOM() {
   updateMeta();
 }
 
+/** Updates `<title>` and Open Graph meta tags to match the current locale. */
 function updateMeta() {
   document.title = t("meta.title");
 
