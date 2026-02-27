@@ -28,7 +28,7 @@ export class CacheManager {
 
       const cacheItem: CacheItem = JSON.parse(item);
 
-      if (this.isExpired(key)) {
+      if (this.isMalformedItem(cacheItem) || this.isItemExpired(cacheItem)) {
         this.remove(key);
         return null;
       }
@@ -98,19 +98,12 @@ export class CacheManager {
 
       const cacheItem: CacheItem = JSON.parse(item);
 
-      if (
-        !Number.isFinite(cacheItem.timestamp) ||
-        !Number.isFinite(cacheItem.ttl) ||
-        cacheItem.timestamp < 0 ||
-        cacheItem.ttl < 0
-      ) {
+      if (this.isMalformedItem(cacheItem)) {
         this.remove(key);
         return true;
       }
 
-      const now = Date.now();
-
-      return now - cacheItem.timestamp > cacheItem.ttl;
+      return this.isItemExpired(cacheItem);
     } catch (error) {
       console.warn("Error checking cache expiration:", error);
       return true;
@@ -172,17 +165,10 @@ export class CacheManager {
             try {
               const cacheItem: CacheItem = JSON.parse(item);
               if (
-                !Number.isFinite(cacheItem.timestamp) ||
-                !Number.isFinite(cacheItem.ttl) ||
-                cacheItem.timestamp < 0 ||
-                cacheItem.ttl < 0
+                this.isMalformedItem(cacheItem) ||
+                this.isItemExpired(cacheItem)
               ) {
                 expiredItems++;
-              } else {
-                const now = Date.now();
-                if (now - cacheItem.timestamp > cacheItem.ttl) {
-                  expiredItems++;
-                }
               }
             } catch {
               expiredItems++; // Count malformed items as expired
@@ -212,17 +198,10 @@ export class CacheManager {
             if (item) {
               const cacheItem: CacheItem = JSON.parse(item);
               if (
-                !Number.isFinite(cacheItem.timestamp) ||
-                !Number.isFinite(cacheItem.ttl) ||
-                cacheItem.timestamp < 0 ||
-                cacheItem.ttl < 0
+                this.isMalformedItem(cacheItem) ||
+                this.isItemExpired(cacheItem)
               ) {
                 keysToRemove.push(key);
-              } else {
-                const now = Date.now();
-                if (now - cacheItem.timestamp > cacheItem.ttl) {
-                  keysToRemove.push(key);
-                }
               }
             }
           } catch {
