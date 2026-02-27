@@ -1,6 +1,114 @@
-/* stylelint-disable at-rule-no-unknown */
+/* stylelint-disable at-rule-no-unknown, scss/at-rule-no-unknown */
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes:
+    light --default,
+    dark --prefersdark;
+}
 
-/* Custom overrides (optional) */
-.hidden { display: none; }
+@theme {
+  --font-sans: "Outfit", system-ui, sans-serif;
+
+  /* HSL-inspired palette — deep transit blue, warm accents */
+  --color-primary: oklch(0.5 0.14 240); /* deep teal-blue */
+  --color-primary-content: oklch(0.98 0.01 240);
+  --color-secondary: oklch(0.55 0.12 170); /* muted teal-green */
+  --color-secondary-content: oklch(0.98 0.01 170);
+  --color-accent: oklch(0.65 0.16 50); /* warm amber */
+  --color-accent-content: oklch(0.2 0.02 50);
+}
+
+/* Entrance animation for results section */
+.animate-in {
+  animation: fade-slide-in 0.4s ease-out;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Crossfade transition when results content is swapped */
+#results-content {
+  transition: opacity 0.15s ease-out;
+}
+
+#results-content.swap-out {
+  opacity: 0;
+}
+
+/* Staggered card entrance */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#results-content .grid > .card {
+  animation: card-enter 0.35s ease-out both;
+}
+
+#results-content .grid > .card:nth-child(1) {
+  animation-delay: 0.04s;
+}
+#results-content .grid > .card:nth-child(2) {
+  animation-delay: 0.08s;
+}
+#results-content .grid > .card:nth-child(3) {
+  animation-delay: 0.12s;
+}
+#results-content .grid > .card:nth-child(4) {
+  animation-delay: 0.16s;
+}
+#results-content .grid > .card:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+/* Hero stat entrance */
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#results-content .stats {
+  animation: hero-enter 0.3s ease-out both;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  #results-content .grid > .card,
+  #results-content .stats {
+    animation: none;
+  }
+
+  #results-content {
+    transition-duration: 0s;
+  }
+}
+
+/* Prominent trip counter */
+.trips-value {
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}

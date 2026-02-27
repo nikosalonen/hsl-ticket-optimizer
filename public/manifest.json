@@ -1,0 +1,9 @@
+{
+  "name": "HSL-lippulaskuri",
+  "short_name": "HSL-laskuri",
+  "description": "Vertaa HSL-lippuja ja löydä edullisin vaihtoehto työmatkallesi.",
+  "start_url": "/hsl-ticket-optimizer/",
+  "display": "standalone",
+  "theme_color": "#1a6fa0",
+  "background_color": "#ffffff"
+}

@@ -11,22 +11,22 @@ Find the most cost‑effective HSL public transport ticket based on your zones, 
 ## Getting started
 ```bash
 # Install deps
-npm install
+pnpm install
 
 # Start dev server
-npm run dev
+pnpm run dev
 
 # Run unit tests
-npm test
+pnpm test
 
 # Type-check
-npm run type-check
+pnpm run type-check
 
 # Build for production
-npm run build
+pnpm run build
 
 # Preview production build
-npm run preview
+pnpm run preview
 ```
 
 ## Usage
