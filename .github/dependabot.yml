@@ -1,0 +1,56 @@
+version: 2
+updates:
+  # npm dependencies (pnpm lockfile)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      # Group Vite + its plugins together to avoid breaking mismatches
+      vite:
+        patterns:
+          - "vite"
+          - "@tailwindcss/vite"
+      # Group all testing deps so test infra stays in sync
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "jsdom"
+      # Group lint/format tooling
+      linting:
+        patterns:
+          - "@biomejs/*"
+      # Group Tailwind + daisyUI styling deps
+      styling:
+        patterns:
+          - "tailwindcss"
+          - "daisyui"
+      # Group TypeScript-related deps
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+
+  # GitHub Actions versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      # Group all GitHub Pages actions together
+      github-pages:
+        patterns:
+          - "actions/configure-pages"
+          - "actions/upload-pages-artifact"
+          - "actions/deploy-pages"
+      # Group CI setup actions together
+      ci-setup:
+        patterns:
+          - "actions/checkout"
+          - "actions/setup-node"
+          - "pnpm/action-setup"
