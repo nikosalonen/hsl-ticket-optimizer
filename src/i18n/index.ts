@@ -17,7 +17,11 @@ export function getLocale(): Locale {
 export function setLocale(locale: Locale): void {
   currentLocale = locale;
   currentMap = LOCALES[locale];
-  localStorage.setItem(STORAGE_KEY, locale);
+  try {
+    localStorage.setItem(STORAGE_KEY, locale);
+  } catch {
+    // Ignore storage errors (quota exceeded, private mode)
+  }
   document.documentElement.lang = locale;
   document.dispatchEvent(
     new CustomEvent("locale-change", { detail: { locale } }),
@@ -40,7 +44,12 @@ export function t(
 export function initI18n(): void {
   const urlParam = new URLSearchParams(window.location.search).get("lang");
   const fromUrl = urlParam && urlParam in LOCALES ? (urlParam as Locale) : null;
-  const saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
+  let saved: Locale | null = null;
+  try {
+    saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
+  } catch {
+    // Ignore storage errors (private mode, restricted access)
+  }
   const locale =
     fromUrl ?? (saved && saved in LOCALES ? (saved as Locale) : DEFAULT_LOCALE);
   currentLocale = locale;
