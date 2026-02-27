@@ -181,9 +181,11 @@ let lastTripsChartParams: {
   summerVacation: boolean;
 } | null = null;
 
+/** Which cost period the comparison cards display as primary. */
 type CostView = "monthly" | "annual";
 let costView: CostView = "monthly";
 
+/** Lightweight UI state used to coordinate loading / error / result visibility. */
 interface AppState {
   isLoading: boolean;
   error: string | null;
@@ -196,6 +198,7 @@ const appState: AppState = {
   results: null,
 };
 
+/** Toggles the loading spinner visibility and updates {@link appState}. */
 function setLoading(isLoading: boolean) {
   appState.isLoading = isLoading;
   const loadingEl = document.getElementById("loading");
@@ -204,6 +207,7 @@ function setLoading(isLoading: boolean) {
   else loadingEl.classList.add("hidden");
 }
 
+/** Displays the error banner with the given message. */
 function showError(message: string) {
   appState.error = message;
   const errorWrap = document.getElementById("error");
@@ -212,12 +216,18 @@ function showError(message: string) {
   if (msgEl) msgEl.textContent = message;
 }
 
+/** Hides the error banner. */
 function hideError() {
   appState.error = null;
   const errorWrap = document.getElementById("error");
   if (errorWrap) errorWrap.classList.add("hidden");
 }
 
+/**
+ * Renders the results section. On first display the section animates in;
+ * on subsequent calls the content crossfades.
+ * @param html - Pre-rendered HTML from {@link renderComparison}.
+ */
 function showResults(html: string) {
   const resultsWrap = document.getElementById("results");
   const content = document.getElementById("results-content");
@@ -243,6 +253,7 @@ function showResults(html: string) {
   }
 }
 
+/** Clears and hides the results section. */
 function hideResults() {
   const resultsWrap = document.getElementById("results");
   const content = document.getElementById("results-content");
