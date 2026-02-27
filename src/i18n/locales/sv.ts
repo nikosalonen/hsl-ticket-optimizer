@@ -57,6 +57,10 @@ export const sv: TranslationMap = {
   "results.howCalculated": "Så här räknas detta",
   "results.perMonth": "/mån",
   "results.savingsTotal": "Spara \u20AC{amount}/mån (\u20AC{annualAmount}/år)",
+  "results.viewMonthly": "Månad",
+  "results.viewAnnual": "År",
+  "results.perYear": "/år",
+  "results.savingsPerYear": "Spara \u20AC{amount}/år jämfört med dyraste",
 
   // Ticket types
   "ticket.single.label": "Enkelbiljett",

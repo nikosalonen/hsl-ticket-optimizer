@@ -141,6 +141,9 @@ function getThemeColor(cssVar: string, alpha?: number): string {
 let costComparisonChart: Chart | null = null;
 let tripsCostChart: Chart | null = null;
 
+type CostView = "monthly" | "annual";
+let costView: CostView = "monthly";
+
 interface AppState {
   isLoading: boolean;
   error: string | null;
@@ -282,15 +285,18 @@ function renderComparison(result: OptimalResult, summerVacation: boolean = false
     });
   }
 
-  // Sort by cost for better visual hierarchy
-  const sortedRows = [...rows].sort((a, b) => a.cost - b.cost);
-  const optimalRow = rows.find((r) => r.key === result.optimal);
+  // Sort by selected cost view for better visual hierarchy
+  const isAnnual = costView === "annual";
+  const getCost = (r: (typeof rows)[number]) => isAnnual ? r.annualCost : r.cost;
+  const sortedRows = [...rows].sort((a, b) => getCost(a) - getCost(b));
+  const optimalRow = sortedRows[0];
 
   const list = sortedRows
     .map((r) => {
-      const isOptimal = r.key === result.optimal;
-      const savingsVsWorst =
-        (sortedRows[sortedRows.length - 1]?.cost || 0) - r.cost;
+      const isOptimal = r === optimalRow;
+      const worstCost = getCost(sortedRows[sortedRows.length - 1]!) || 0;
+      const savingsVsWorst = worstCost - getCost(r);
+      const savingsKey = isAnnual ? "results.savingsPerYear" : "results.savingsPerMonth";
 
       // All template content is internally generated (ticket labels, numbers, SVG icons)
       return `
@@ -329,7 +335,7 @@ function renderComparison(result: OptimalResult, summerVacation: boolean = false
 
 						${
               savingsVsWorst > 0
-                ? `<p class="text-sm text-success font-medium">${t("results.savingsPerMonth", { amount: savingsVsWorst.toFixed(2) })}</p>`
+                ? `<p class="text-sm text-success font-medium">${t(savingsKey, { amount: savingsVsWorst.toFixed(2) })}</p>`
                 : ""
             }
 
@@ -343,20 +349,26 @@ function renderComparison(result: OptimalResult, summerVacation: boolean = false
     })
     .join("");
 
+  const worstCost = getCost(sortedRows[sortedRows.length - 1]!) || 0;
   const optimalSavings = optimalRow
-    ? (sortedRows[sortedRows.length - 1]?.cost || 0) - optimalRow.cost
+    ? worstCost - getCost(optimalRow)
     : 0;
+  const heroValue = optimalRow ? getCost(optimalRow) : 0;
+  const heroSuffix = isAnnual ? t("results.perYear") : t("results.perMonth");
+  const savingsSuffix = isAnnual
+    ? t("results.savingsPerYear", { amount: optimalSavings.toFixed(2) })
+    : t("results.savingsTotal", { amount: (optimalSavings).toFixed(2), annualAmount: (optimalSavings * (summerVacation ? 11 : 12)).toFixed(2) });
 
   // All template content is internally generated (labels, numbers, SVG icons)
   return `
 		<div class="stats bg-primary text-primary-content shadow-lg w-full mb-6">
 			<div class="stat place-items-center gap-0">
 				<div class="stat-title text-primary-content/50">${t("results.bestOption")}</div>
-				<div class="stat-value tabular-nums text-3xl sm:text-4xl">\u20AC${optimalRow?.cost.toFixed(2) || "0"}<span class="text-base font-medium text-primary-content/50">${t("results.perMonth")}</span></div>
+				<div class="stat-value tabular-nums text-3xl sm:text-4xl">\u20AC${heroValue.toFixed(2)}<span class="text-base font-medium text-primary-content/50">${heroSuffix}</span></div>
 				<div class="stat-desc text-primary-content/60 text-base">${optimalRow?.label || result.optimal}</div>
 				${
           optimalSavings > 0
-            ? `<div class="stat-desc text-primary-content/70 mt-1">${t("results.savingsTotal", { amount: optimalSavings.toFixed(2), annualAmount: (optimalSavings * (summerVacation ? 11 : 12)).toFixed(2) })}</div>`
+            ? `<div class="stat-desc text-primary-content/70 mt-1">${savingsSuffix}</div>`
             : ""
         }
 			</div>
@@ -696,6 +708,29 @@ if (formEl) {
   formEl.addEventListener("submit", (evt) => {
     evt.preventDefault();
     void calculate();
+  });
+}
+
+// Cost view toggle (monthly / annual)
+function updateCostViewToggle() {
+  for (const btn of document.querySelectorAll<HTMLButtonElement>(
+    "#cost-view-toggle [data-cost-view]",
+  )) {
+    const isActive = btn.dataset.costView === costView;
+    btn.classList.toggle("btn-active", isActive);
+  }
+}
+
+for (const btn of document.querySelectorAll<HTMLButtonElement>(
+  "#cost-view-toggle [data-cost-view]",
+)) {
+  btn.addEventListener("click", () => {
+    const view = btn.dataset.costView as CostView | undefined;
+    if (view && view !== costView) {
+      costView = view;
+      updateCostViewToggle();
+      void calculate();
+    }
   });
 }
 

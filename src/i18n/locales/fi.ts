@@ -57,6 +57,10 @@ export const fi: TranslationMap = {
   "results.howCalculated": "Näin tämä on laskettu",
   "results.perMonth": "/kk",
   "results.savingsTotal": "Säästä \u20AC{amount}/kk (\u20AC{annualAmount}/v)",
+  "results.viewMonthly": "Kuukausi",
+  "results.viewAnnual": "Vuosi",
+  "results.perYear": "/v",
+  "results.savingsPerYear": "Säästä \u20AC{amount}/v kalleimpaan verrattuna",
 
   // Ticket types
   "ticket.single.label": "Kertalippu",

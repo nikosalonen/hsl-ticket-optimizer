@@ -57,6 +57,10 @@ export const en: TranslationMap = {
   "results.howCalculated": "How this is calculated",
   "results.perMonth": "/mo",
   "results.savingsTotal": "Save \u20AC{amount}/mo (\u20AC{annualAmount}/yr)",
+  "results.viewMonthly": "Monthly",
+  "results.viewAnnual": "Annual",
+  "results.perYear": "/yr",
+  "results.savingsPerYear": "Save \u20AC{amount}/yr vs most expensive",
 
   // Ticket types
   "ticket.single.label": "Single tickets",
