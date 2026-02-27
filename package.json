@@ -13,17 +13,17 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.12",
-    "@types/node": "^24.3.0",
-    "@vitest/ui": "^3.2.4",
-    "autoprefixer": "^10.4.21",
-    "daisyui": "^5.0.50",
-    "jsdom": "^26.1.0",
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/node": "^25.3.2",
+    "@vitest/ui": "^4.0.18",
+    "autoprefixer": "^10.4.27",
+    "daisyui": "^5.5.19",
+    "jsdom": "^28.1.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.12",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.2",
-    "vitest": "^3.2.4"
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
   },
   "keywords": [
     "hsl",
@@ -35,7 +35,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.12",
-    "chart.js": "^4.5.0"
+    "@tailwindcss/vite": "^4.2.1",
+    "chart.js": "^4.5.1"
   }
 }
