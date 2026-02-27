@@ -3,7 +3,16 @@
 import Chart from "chart.js/auto";
 import { PriceService, priceService } from "./services/PriceService.js";
 
-console.log("HSL Ticket Optimizer loaded");
+function getThemeColor(cssVar: string, alpha?: number): string {
+	const raw = getComputedStyle(document.documentElement)
+		.getPropertyValue(cssVar)
+		.trim();
+	if (alpha != null) {
+		// Insert alpha before the closing paren: oklch(45% 0.24 277 / 0.2)
+		return raw.replace(")", ` / ${alpha})`);
+	}
+	return raw;
+}
 
 // Keep references to charts so we can destroy and re-create them safely
 let costComparisonChart: Chart | null = null;
@@ -242,7 +251,6 @@ function renderCostComparisonChart(result: OptimalResult) {
 		Number(result.season.monthlyCost) || 0,
 		continuousMonthlyValue,
 	];
-	console.log("[Chart] Cost comparison labels/data", { labels, data });
 	if (result.series10) {
 		labels.push("10-trip series");
 		data.push(result.series10.monthlyCost);
@@ -260,8 +268,8 @@ function renderCostComparisonChart(result: OptimalResult) {
 				{
 					label: "Monthly Cost (€)",
 					data,
-					backgroundColor: "rgba(0, 102, 204, 0.2)",
-					borderColor: "rgba(0, 102, 204, 1)",
+					backgroundColor: getThemeColor("--color-primary", 0.2),
+					borderColor: getThemeColor("--color-primary"),
 					borderWidth: 1,
 				},
 			],
@@ -326,6 +334,14 @@ async function renderTripsCostChart(
 			series20Costs.push(comparison.series20.monthlyCost);
 	}
 
+	const lineColors = [
+		getThemeColor("--color-primary"),
+		getThemeColor("--color-secondary"),
+		getThemeColor("--color-accent"),
+		getThemeColor("--color-info"),
+		getThemeColor("--color-warning"),
+	];
+
 	const datasets: Array<{
 		label: string;
 		data: number[];
@@ -335,35 +351,35 @@ async function renderTripsCostChart(
 		{
 			label: "Single",
 			data: singleCosts,
-			borderColor: "#888888",
-			backgroundColor: "#888888",
+			borderColor: lineColors[0] ?? "#888",
+			backgroundColor: lineColors[0] ?? "#888",
 		},
 		{
 			label: "Season",
 			data: seasonCosts,
-			borderColor: "#0066cc",
-			backgroundColor: "#0066cc",
+			borderColor: lineColors[1] ?? "#888",
+			backgroundColor: lineColors[1] ?? "#888",
 		},
 		{
 			label: "Continuous",
 			data: contMonthlyCosts,
-			borderColor: "#2e7d32",
-			backgroundColor: "#2e7d32",
+			borderColor: lineColors[2] ?? "#888",
+			backgroundColor: lineColors[2] ?? "#888",
 		},
 	];
 	if (series10Costs.length)
 		datasets.push({
 			label: "Series 10",
 			data: series10Costs,
-			borderColor: "#9c27b0",
-			backgroundColor: "#9c27b0",
+			borderColor: lineColors[3] ?? "#888",
+			backgroundColor: lineColors[3] ?? "#888",
 		});
 	if (series20Costs.length)
 		datasets.push({
 			label: "Series 20",
 			data: series20Costs,
-			borderColor: "#ff9800",
-			backgroundColor: "#ff9800",
+			borderColor: lineColors[4] ?? "#888",
+			backgroundColor: lineColors[4] ?? "#888",
 		});
 
 	tripsCostChart = new Chart(ctx, {
@@ -375,7 +391,7 @@ async function renderTripsCostChart(
 		options: {
 			responsive: true,
 			maintainAspectRatio: true,
-			aspectRatio: 2.5,
+			aspectRatio: window.innerWidth < 768 ? 1.5 : 2.5,
 			plugins: {
 				legend: { position: "top" as const },
 				tooltip: {
@@ -401,18 +417,6 @@ async function renderTripsCostChart(
 	});
 }
 
-// This function is no longer needed since we show all ticket types by default
-// function getSelectedTicketTypes(): Set<string> {
-// 	const boxes = document.querySelectorAll<HTMLInputElement>(
-// 		'input[name="ticketTypes"]:checked',
-// 	);
-// 	const selected = new Set<string>();
-// 	boxes.forEach((b) => {
-// 		selected.add(b.value);
-// 	});
-// 	return selected;
-// }
-
 async function onSubmit(event: SubmitEvent) {
 	event.preventDefault();
 	hideError();
@@ -436,7 +440,7 @@ async function onSubmit(event: SubmitEvent) {
 			showError("Please select travel zones");
 			return;
 		}
-		if (Number.isNaN(tripsPerWeek) || tripsPerWeek < 0) {
+		if (Number.isNaN(tripsPerWeek) || tripsPerWeek < 1) {
 			showError("Please enter a valid number of trips per week");
 			return;
 		}

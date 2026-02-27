@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fi" data-theme="cupcake">
+<html lang="fi">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -37,7 +37,7 @@
                             id="zones"
                             name="zones"
                             required
-                            class="select select-bordered select-lg w-full"
+                            class="select select-bordered md:select-lg w-full"
                         >
                             <option value="">Select zones</option>
                             <option value="AB">AB</option>
@@ -59,7 +59,7 @@
                             id="homemunicipality"
                             name="homemunicipality"
                             required
-                            class="select select-bordered select-lg w-full"
+                            class="select select-bordered md:select-lg w-full"
                         >
                             <option value="helsinki" selected>Helsinki</option>
                             <option value="espoo">Espoo</option>
@@ -100,7 +100,7 @@
                             min="1"
                             max="50"
                             required
-                            class="input input-bordered input-lg w-full"
+                            class="input input-bordered md:input-lg w-full"
                         />
                         <small class="label-text-alt text-base-content/70"
                             >Enter number of one-way trips (1-50)</small
@@ -115,12 +115,14 @@
                 <div
                     id="loading"
                     class="loading hidden text-center p-6 text-base-content/70"
+                    role="status"
+                    aria-live="polite"
                 >
                     <span class="loading loading-spinner loading-lg"></span>
                     <p>Fetching current HSL prices...</p>
                 </div>
 
-                <div id="error" class="error hidden alert alert-error">
+                <div id="error" class="error hidden alert alert-error" role="alert">
                     <span class="error-message"></span>
                 </div>
 

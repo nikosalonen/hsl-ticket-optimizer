@@ -321,12 +321,12 @@ describe("PriceService", () => {
 
 			expect(result.single).toBe(2.95);
 			expect(result.series10).toEqual({
-				price: 28.8,
+				price: 29.7,
 				journeys: 10,
 				validityDays: 30,
 			}); // Hardcoded AB pricing
 			expect(result.series20).toEqual({
-				price: 54.4,
+				price: 56.1,
 				journeys: 20,
 				validityDays: 60,
 			}); // Hardcoded AB pricing
@@ -684,8 +684,8 @@ describe("PriceService integration", () => {
 		const result1 = await priceService.fetchTicketPrices("11", 1);
 
 		expect(result1.single).toBe(2.95);
-		expect(result1.series10.price).toBe(28.8); // Hardcoded AB pricing
-		expect(result1.series20.price).toBe(54.4); // Hardcoded AB pricing
+		expect(result1.series10.price).toBe(29.7); // Hardcoded AB pricing
+		expect(result1.series20.price).toBe(56.1); // Hardcoded AB pricing
 		expect(result1.daily).toBe(9.5);
 		expect(result1.monthly).toBe(107.7); // 30-day season ticket price
 		expect(mockCacheManager.set).toHaveBeenCalled();
@@ -933,12 +933,12 @@ describe("PriceService utility methods", () => {
 
 			expect(options).toHaveLength(2);
 			expect(options[0]).toEqual({
-				price: 28.8,
+				price: 29.7,
 				journeys: 10,
 				validityDays: 30,
 			});
 			expect(options[1]).toEqual({
-				price: 54.4,
+				price: 56.1,
 				journeys: 20,
 				validityDays: 60,
 			});
@@ -950,12 +950,12 @@ describe("PriceService utility methods", () => {
 
 			expect(options).toHaveLength(2);
 			expect(options[0]).toEqual({
-				price: 39.6,
+				price: 40.5,
 				journeys: 10,
 				validityDays: 30,
 			});
 			expect(options[1]).toEqual({
-				price: 74.8,
+				price: 76.5,
 				journeys: 20,
 				validityDays: 60,
 			});
@@ -967,12 +967,12 @@ describe("PriceService utility methods", () => {
 
 			expect(options).toHaveLength(2);
 			expect(options[0]).toEqual({
-				price: 43.2,
+				price: 45.0,
 				journeys: 10,
 				validityDays: 30,
 			});
 			expect(options[1]).toEqual({
-				price: 81.6,
+				price: 85.0,
 				journeys: 20,
 				validityDays: 60,
 			});

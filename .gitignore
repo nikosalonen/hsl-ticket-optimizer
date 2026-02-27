@@ -40,3 +40,6 @@ coverage/
 
 # Vitest
 coverage/
+
+# Kiro design tool
+.kiro/

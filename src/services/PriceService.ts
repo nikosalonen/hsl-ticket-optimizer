@@ -24,7 +24,6 @@ import {
 	type ErrorType,
 	type HSLTicket,
 	type HSLTicketsResponse,
-	// type SeasonTicket,
 	type SeriesTicket,
 	type TicketPrices,
 } from "../models/types.js";
@@ -49,6 +48,7 @@ export class PriceService {
 	private static readonly BASE_URL = "https://cms.hsl.fi/api/v1/tickets";
 	private static readonly CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
 	private static readonly REQUEST_TIMEOUT = 10000; // 10 seconds
+	private static readonly WEEKS_PER_MONTH = 4.33;
 
 	/**
 	 * Fetch all ticket prices for given zones and customer group
@@ -152,19 +152,6 @@ export class PriceService {
 				timestamp: Date.now(),
 			};
 
-			console.log("[PriceService] Composed prices:", {
-				zones,
-				customerGroup,
-				single: prices.single,
-				series10: prices.series10,
-				series20: prices.series20,
-				daily: prices.daily,
-				monthly: prices.monthly,
-				continuousMonthly: prices.continuousMonthly,
-				seasonMonthlyPrice: prices.season.price,
-				saverSubscriptionMonthly: prices.saverSubscription,
-			});
-
 			// Cache the results
 			this.setCachedPrices(cacheKey, prices);
 
@@ -259,13 +246,13 @@ export class PriceService {
 	getSeriesTicketOptions(zones: string): SeriesTicket[] {
 		const SERIES_PRICING: Record<string, { trips10: number; trips20: number }> =
 			{
-				"11": { trips10: 28.8, trips20: 54.4 }, // AB
-				"12": { trips10: 39.6, trips20: 74.8 }, // ABC
-				"13": { trips10: 43.2, trips20: 81.6 }, // ABCD
-				"21": { trips10: 28.8, trips20: 54.4 }, // BC
-				"22": { trips10: 39.6, trips20: 74.8 }, // BCD
-				"31": { trips10: 28.8, trips20: 54.4 }, // CD
-				"40": { trips10: 28.8, trips20: 54.4 }, // D
+				"11": { trips10: 29.7, trips20: 56.1 }, // AB (2026)
+				"12": { trips10: 40.5, trips20: 76.5 }, // ABC (2026)
+				"13": { trips10: 45.0, trips20: 85.0 }, // ABCD (2026)
+				"21": { trips10: 29.7, trips20: 56.1 }, // BC (2026)
+				"22": { trips10: 40.5, trips20: 76.5 }, // BCD (2026)
+				"31": { trips10: 29.7, trips20: 56.1 }, // CD (2026)
+				"40": { trips10: 29.7, trips20: 56.1 }, // D (2026)
 			};
 
 		const pricing = SERIES_PRICING[zones];
@@ -409,92 +396,6 @@ export class PriceService {
 			throw this.handleAPIError(error, "daily ticket");
 		}
 	}
-
-	/**
-	 * Fetch season ticket data - gets the 30-day monthly ticket
-	 * @param zones Zone string
-	 * @param customerGroup Customer group
-	 * @param homemunicipality Home municipality
-	 * @returns Season ticket information (30-day ticket)
-	 */
-	// private async fetchSeasonTicketData(
-	// 	zones: string,
-	// 	customerGroup: number,
-	// 	homemunicipality: string,
-	// ): Promise<SeasonTicket> {
-	// 	const url = `${PriceService.BASE_URL}/season?language=fi&customerGroup=${customerGroup}&zones=${zones}&homemunicipality=${homemunicipality}&ownership=personal`;
-	//
-	// 	try {
-	// 		const response = await this.makeRequest<HSLSeasonResponse>(url);
-	//
-	// 		// Handle the actual API response structure with both tickets and subscriptions
-	// 		let monthlyTicket: HSLTicket | undefined;
-	//
-	// 		// Look for 30-day ticket in the tickets array
-	// 		if (response.tickets && Array.isArray(response.tickets)) {
-	// 			monthlyTicket = response.tickets.find(
-	// 				(ticket) =>
-	// 					ticket.customerGroup === customerGroup &&
-	// 					ticket.zones === parseInt(zones) &&
-	// 					ticket.durationDays === 30,
-	// 			);
-	// 		}
-	//
-	// 		if (!monthlyTicket || typeof monthlyTicket.price !== "number") {
-	// 			throw new APIError(
-	// 				"No 30-day season ticket found in response",
-	// 				"invalid_response",
-	// 			);
-	// 		}
-	//
-	// 		return {
-	// 			price: monthlyTicket.price, // This is already the monthly price (e.g., 107.70)
-	// 			durationDays: 30,
-	// 			type: "season",
-	// 		};
-	// 	} catch (error) {
-	// 		throw this.handleAPIError(error, "season ticket");
-	// 	}
-	// }
-
-	/**
-	 * Fetch saver subscription price - gets the 12-month commitment subscription
-	 * @param zones Zone string
-	 * @param customerGroup Customer group
-	 * @param homemunicipality Home municipality
-	 * @returns Saver subscription price
-	 */
-	// private async fetchSaverSubscriptionPrice(
-	// 	zones: string,
-	// 	customerGroup: number,
-	// 	homemunicipality: string,
-	// ): Promise<number | undefined> {
-	// 	const url = `${PriceService.BASE_URL}/season?language=fi&customerGroup=${customerGroup}&zones=${zones}&homemunicipality=${homemunicipality}&ownership=personal`;
-	//
-	// 	try {
-	// 		const response = await this.makeRequest<HSLSeasonResponse>(url);
-	//
-	// 		// Look for the "Jatkuva säästötilaus" (12-month commitment) in subscriptions array
-	// 		let saverSubscription: HSLSubscription | undefined;
-	//
-	// 		if (response.subscriptions && Array.isArray(response.subscriptions)) {
-	// 			saverSubscription = response.subscriptions.find(
-	// 				(subscription) =>
-	// 					subscription.customerGroup === customerGroup &&
-	// 					subscription.zones === parseInt(zones) &&
-	// 					subscription.title.includes("säästötilaus"), // "Jatkuva säästötilaus"
-	// 			);
-	// 		}
-	//
-	// 		if (!saverSubscription || typeof saverSubscription.price !== "number") {
-	// 			return undefined;
-	// 		}
-	//
-	// 		return saverSubscription.price; // This is already the monthly price (e.g., 89.80)
-	// 	} catch (_error) {
-	// 		return undefined;
-	// 	}
-	// }
 
 	/**
 	 * Get cached prices if available and not expired
@@ -908,9 +809,8 @@ export class PriceService {
 			);
 		}
 
-		// Calculate trips per month (4.33 weeks per month) and per year
-		const WEEKS_PER_MONTH = 4.33;
-		const tripsPerMonth = Math.ceil(tripsPerWeek * WEEKS_PER_MONTH);
+		// Calculate trips per month and per year
+		const tripsPerMonth = Math.ceil(tripsPerWeek * PriceService.WEEKS_PER_MONTH);
 		const tripsPerYear = Math.ceil(tripsPerWeek * 52);
 
 		// Calculate total tickets needed (round up to ensure coverage)
@@ -923,19 +823,7 @@ export class PriceService {
 		const annualCost = Math.round(tripsPerYear * singleTicketPrice * 100) / 100;
 
 		// Create calculation explanation
-		const calculation = `${tripsPerWeek} trips/week × ${WEEKS_PER_MONTH} weeks/month = ${tripsPerMonth.toFixed(1)} trips/month × €${singleTicketPrice} = €${monthlyCost}/month`;
-
-		console.log("[PriceService] Single tickets cost calculation", {
-			tripsPerWeek,
-			weeksPerMonth: WEEKS_PER_MONTH,
-			tripsPerMonth,
-			tripsPerYear,
-			totalTickets,
-			singleTicketPrice,
-			monthlyCost,
-			annualCost,
-			calculation,
-		});
+		const calculation = `${tripsPerWeek} trips/week × ${PriceService.WEEKS_PER_MONTH} weeks/month = ${tripsPerMonth.toFixed(1)} trips/month × €${singleTicketPrice} = €${monthlyCost}/month`;
 
 		return {
 			monthlyCost,
@@ -972,8 +860,7 @@ export class PriceService {
 			throw new Error("Invalid series ticket configuration");
 		}
 
-		const WEEKS_PER_MONTH = 4.33;
-		const tripsPerMonth = Math.ceil(tripsPerWeek * WEEKS_PER_MONTH);
+		const tripsPerMonth = Math.ceil(tripsPerWeek * PriceService.WEEKS_PER_MONTH);
 		const tripsPerYear = Math.ceil(tripsPerWeek * 52);
 
 		if (tripsPerMonth === 0) {
@@ -1022,25 +909,6 @@ export class PriceService {
 
 		const calculation = `${ticketsNeeded}× series (${seriesTicket.journeys} journeys, ${seriesTicket.validityDays} days) with ~${effectiveUsable} usable per pack → €${monthlyCost}/month`;
 
-		console.log("[PriceService] Series tickets cost calculation", {
-			tripsPerWeek,
-			seriesTicket,
-			weeksPerMonth: WEEKS_PER_MONTH,
-			tripsPerMonth,
-			tripsPerYear,
-			usableJourneysPerPack,
-			effectiveUsable,
-			ticketsNeeded,
-			totalJourneysCapacity,
-			totalUsableJourneys,
-			journeysWasted,
-			monthlyCost,
-			annualTicketsNeeded,
-			annualCost,
-			wasteWarning,
-			calculation,
-		});
-
 		return {
 			monthlyCost,
 			annualCost,
@@ -1065,12 +933,6 @@ export class PriceService {
 		const monthlyCost = Math.round(monthlyPrice * 100) / 100;
 		const annualCost = Math.round(monthlyCost * 12 * 100) / 100;
 		const calculation = `Fixed €${monthlyCost}/month`;
-		console.log("[PriceService] Monthly ticket cost calculation", {
-			monthlyPrice,
-			monthlyCost,
-			annualCost,
-			calculation,
-		});
 		return {
 			monthlyCost,
 			annualCost,
@@ -1090,12 +952,6 @@ export class PriceService {
 		annualCost: number;
 		calculation: string;
 	} {
-		console.log("calculateContinuousMonthlyTicketCost called with:", {
-			monthlyPrice,
-			continuousMonthlyPrice,
-			discountRatio,
-		});
-
 		if (monthlyPrice <= 0) {
 			throw new Error("Monthly ticket price must be greater than 0");
 		}
@@ -1109,15 +965,6 @@ export class PriceService {
 			continuousMonthlyPrice && continuousMonthlyPrice > 0
 				? `Fixed €${monthlyCost}/month`
 				: `Monthly (€${monthlyPrice}) with ${(discountRatio * 100).toFixed(0)}% discount = €${monthlyCost}/month`;
-		console.log("[PriceService] Continuous monthly cost calculation", {
-			monthlyPrice,
-			providedContinuousMonthlyPrice: continuousMonthlyPrice,
-			discountRatio,
-			effectiveMonthlyPrice: effective,
-			monthlyCost,
-			annualCost,
-			calculation: calc,
-		});
 		return {
 			monthlyCost,
 			annualCost,
@@ -1139,12 +986,6 @@ export class PriceService {
 		const monthlyCost = Math.round(seasonPrice * 100) / 100;
 		const annualCost = Math.round(seasonPrice * 12 * 100) / 100;
 		const calculation = `30-day ticket: €${monthlyCost}/month`;
-		console.log("[PriceService] Season ticket cost calculation", {
-			seasonPrice,
-			monthlyCost,
-			annualCost,
-			calculation,
-		});
 		return {
 			monthlyCost,
 			annualCost,
@@ -1230,18 +1071,6 @@ export class PriceService {
 		options.sort((a, b) => a.cost - b.cost);
 		const optimal = options[0]?.key ?? "single";
 
-		console.log("[PriceService] Options monthly vs annual costs", {
-			inputs: { tripsPerWeek, prices },
-			results: {
-				single,
-				series10,
-				series20,
-				season,
-				continuousMonthly,
-				optimal,
-			},
-		});
-
 		return {
 			single: {
 				monthlyCost: single.monthlyCost,
@@ -1299,19 +1128,6 @@ export class PriceService {
 			const savings = singleTicketCost.monthlyCost - monthlyCost;
 			reasoning = `Monthly ticket saves €${savings.toFixed(2)}/month. Break-even at ${breakEvenTrips} trips/month`;
 		}
-
-		console.log("[PriceService] Ticket recommendation", {
-			tripsPerWeek,
-			singleTicketPrice,
-			monthlyTicketPrice,
-			computed: {
-				singleMonthlyCost: singleTicketCost.monthlyCost,
-				monthlyCost,
-				breakEvenTrips,
-				recommendation,
-				reasoning,
-			},
-		});
 
 		return {
 			recommendation,
