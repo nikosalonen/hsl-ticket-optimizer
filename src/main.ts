@@ -339,11 +339,10 @@ function renderComparison(
   const list = sortedRows
     .map((r) => {
       const isOptimal = r === optimalRow;
-      const worstCost = worstRow ? getCost(worstRow) : 0;
-      const savingsVsWorst = worstCost - getCost(r);
-      const savingsKey = isAnnual
-        ? "results.savingsPerYear"
-        : "results.savingsPerMonth";
+      const extraCost = optimalRow ? getCost(r) - getCost(optimalRow) : 0;
+      const extraCostKey = isAnnual
+        ? "results.moreExpensivePerYear"
+        : "results.moreExpensivePerMonth";
 
       // All template content is internally generated (ticket labels, numbers, SVG icons)
       return `
@@ -379,8 +378,8 @@ function renderComparison(
             }
 
 						${
-              savingsVsWorst > 0
-                ? `<p class="text-sm text-success font-medium">${t(savingsKey, { amount: savingsVsWorst.toFixed(2) })}</p>`
+              extraCost > 0
+                ? `<p class="text-sm text-error font-medium">${t(extraCostKey, { amount: extraCost.toFixed(2) })}</p>`
                 : ""
             }
 
