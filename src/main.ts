@@ -181,12 +181,25 @@ function hideError() {
 function showResults(html: string) {
   const resultsWrap = document.getElementById("results");
   const content = document.getElementById("results-content");
-  // Content is internally generated HTML from renderComparison(), not user input
-  if (content) content.innerHTML = html;
-  if (resultsWrap) {
-    const wasHidden = resultsWrap.classList.contains("hidden");
+  if (!content || !resultsWrap) return;
+
+  const wasHidden = resultsWrap.classList.contains("hidden");
+
+  if (wasHidden) {
+    // First time: just set content and animate the whole section in
+    // Content is internally generated HTML from renderComparison(), not user input
+    content.innerHTML = html;
     resultsWrap.classList.remove("hidden");
-    if (wasHidden) resultsWrap.classList.add("animate-in");
+    resultsWrap.classList.add("animate-in");
+  } else {
+    // Already visible: crossfade the content swap
+    content.classList.add("swap-out");
+    // Wait for fade-out, then swap and fade back in
+    setTimeout(() => {
+      // Content is internally generated HTML from renderComparison(), not user input
+      content.innerHTML = html;
+      content.classList.remove("swap-out");
+    }, 150);
   }
 }
 
@@ -300,17 +313,15 @@ function renderComparison(result: OptimalResult, summerVacation: boolean = false
 
       // All template content is internally generated (ticket labels, numbers, SVG icons)
       return `
-				<div class="card bg-base-100 shadow-md border-2 hover:shadow-lg transition-shadow ${isOptimal ? "border-primary" : "border-transparent"}">
+				<div class="card bg-base-100 shadow-md border-2 hover:shadow-lg transition-shadow relative ${isOptimal ? "border-primary" : "border-transparent"}">
+					${isOptimal ? `<span class="badge badge-primary badge-sm gap-1 absolute top-2 right-2 z-10">${ICONS.star} ${t("results.best")}</span>` : ""}
 					<div class="card-body gap-3 p-4 sm:p-6">
-						<div class="flex items-center justify-between gap-2">
-							<div class="flex items-center gap-2.5 min-w-0">
-								<span class="text-primary">${r.icon}</span>
-								<div class="min-w-0">
-									<h3 class="font-semibold leading-tight truncate">${r.label}</h3>
-									<p class="text-sm text-base-content/50">${r.description}</p>
-								</div>
+						<div class="flex items-center gap-2.5">
+							<span class="text-primary">${r.icon}</span>
+							<div class="min-w-0">
+								<h3 class="font-semibold leading-tight">${r.label}</h3>
+								<p class="text-sm text-base-content/50">${r.description}</p>
 							</div>
-							${isOptimal ? `<span class="badge badge-primary badge-sm gap-1 shrink-0">${ICONS.star} ${t("results.best")}</span>` : ""}
 						</div>
 
 						<div class="grid grid-cols-2 gap-3 p-3 rounded-box bg-base-200/60">
@@ -661,9 +672,22 @@ async function calculate() {
     );
 
     const html = renderComparison(comparison, summerVacation);
+    const isSwap = !document
+      .getElementById("results")
+      ?.classList.contains("hidden");
     showResults(html);
-    renderCostComparisonChart(comparison);
-    void renderTripsCostChart(tripsPerWeek, comparisonOptions, summerVacation);
+
+    // Delay chart rendering during crossfade so canvases exist in the DOM
+    const renderCharts = () => {
+      renderCostComparisonChart(comparison);
+      void renderTripsCostChart(tripsPerWeek, comparisonOptions, summerVacation);
+    };
+
+    if (isSwap) {
+      setTimeout(renderCharts, 160);
+    } else {
+      renderCharts();
+    }
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : t("error.unexpected");
