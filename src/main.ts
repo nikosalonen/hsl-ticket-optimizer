@@ -85,12 +85,17 @@ translateStaticDOM();
 
 // --------------- Theme toggle ---------------
 
+/** Detects the user's OS-level color scheme preference. */
 function getSystemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
+/**
+ * Applies the given theme to the document and toggles theme-toggle icon visibility.
+ * @param theme - `"light"` or `"dark"`.
+ */
 function applyTheme(theme: "light" | "dark") {
   document.documentElement.setAttribute("data-theme", theme);
   // Show the opposite icon so the user can switch
@@ -102,6 +107,7 @@ function applyTheme(theme: "light" | "dark") {
     ?.classList.toggle("hidden", theme === "dark");
 }
 
+/** Initialises theme from localStorage or system preference, wires the toggle button and system-change listener. */
 function initTheme() {
   const saved = localStorage.getItem("theme") as "light" | "dark" | null;
   applyTheme(saved ?? getSystemTheme());
