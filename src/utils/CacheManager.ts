@@ -97,6 +97,17 @@ export class CacheManager {
       }
 
       const cacheItem: CacheItem = JSON.parse(item);
+
+      if (
+        !Number.isFinite(cacheItem.timestamp) ||
+        !Number.isFinite(cacheItem.ttl) ||
+        cacheItem.timestamp < 0 ||
+        cacheItem.ttl < 0
+      ) {
+        this.remove(key);
+        return true;
+      }
+
       const now = Date.now();
 
       return now - cacheItem.timestamp > cacheItem.ttl;
@@ -160,9 +171,18 @@ export class CacheManager {
             totalSize += item.length;
             try {
               const cacheItem: CacheItem = JSON.parse(item);
-              const now = Date.now();
-              if (now - cacheItem.timestamp > cacheItem.ttl) {
+              if (
+                !Number.isFinite(cacheItem.timestamp) ||
+                !Number.isFinite(cacheItem.ttl) ||
+                cacheItem.timestamp < 0 ||
+                cacheItem.ttl < 0
+              ) {
                 expiredItems++;
+              } else {
+                const now = Date.now();
+                if (now - cacheItem.timestamp > cacheItem.ttl) {
+                  expiredItems++;
+                }
               }
             } catch {
               expiredItems++; // Count malformed items as expired
@@ -191,9 +211,18 @@ export class CacheManager {
             const item = localStorage.getItem(key);
             if (item) {
               const cacheItem: CacheItem = JSON.parse(item);
-              const now = Date.now();
-              if (now - cacheItem.timestamp > cacheItem.ttl) {
+              if (
+                !Number.isFinite(cacheItem.timestamp) ||
+                !Number.isFinite(cacheItem.ttl) ||
+                cacheItem.timestamp < 0 ||
+                cacheItem.ttl < 0
+              ) {
                 keysToRemove.push(key);
+              } else {
+                const now = Date.now();
+                if (now - cacheItem.timestamp > cacheItem.ttl) {
+                  keysToRemove.push(key);
+                }
               }
             }
           } catch {
