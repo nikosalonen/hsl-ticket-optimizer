@@ -8,11 +8,11 @@ HSL Ticket Optimizer — a client-side web app that fetches real ticket prices f
 
 ## Commands
 
-- `npm run dev` — Start Vite dev server (port 3000, auto-opens browser)
-- `npm run build` — Type-check with `tsc` then build with Vite to `dist/`
-- `npm test` — Run all Vitest tests once (`vitest --run`)
-- `npm run test:watch` — Run Vitest in watch mode
-- `npm run type-check` — TypeScript type-check only (`tsc --noEmit`)
+- `pnpm run dev` — Start Vite dev server (port 3000, auto-opens browser)
+- `pnpm run build` — Type-check with `tsc` then build with Vite to `dist/`
+- `pnpm test` — Run all Vitest tests once (`vitest --run`)
+- `pnpm run test:watch` — Run Vitest in watch mode
+- `pnpm run type-check` — TypeScript type-check only (`tsc --noEmit`)
 
 ## Architecture
 
@@ -48,7 +48,7 @@ Single-page vanilla TypeScript app (no framework). Vite bundles everything; no S
 - Test setup: `tests/setup.js`
 - Config in `vite.config.js` under `test` key
 - Tests mock `fetch` globally and mock `CacheManager`
-- Run a single test file: `npx vitest --run tests/PriceService.test.ts`
+- Run a single test file: `pnpm vitest --run tests/PriceService.test.ts`
 
 ## TypeScript
 
