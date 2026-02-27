@@ -1,4 +1,4 @@
-/* stylelint-disable at-rule-no-unknown */
+/* stylelint-disable at-rule-no-unknown, scss/at-rule-no-unknown */
 @import "tailwindcss";
 @plugin "daisyui" {
   themes:
@@ -89,6 +89,19 @@
 
 #results-content .stats {
   animation: hero-enter 0.3s ease-out both;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  #results-content .grid > .card,
+  #results-content .stats {
+    animation: none;
+  }
+
+  #results-content {
+    transition-duration: 0s;
+  }
 }
 
 /* Prominent trip counter */
