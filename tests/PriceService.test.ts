@@ -1242,7 +1242,7 @@ describe("PriceService utility methods", () => {
       expect(result.calculation).toBe("No trips - no cost");
     });
 
-    it("should warn about significant waste when validity limits cause waste", () => {
+    it("should warn about waste when validity limits cause any waste", () => {
       const testService = new PriceService();
       const seriesTicket = { price: 12.5, journeys: 10, validityDays: 7 }; // Only 1 week validity
       const result = testService.calculateSeriesTicketCost(2, seriesTicket);
@@ -1252,9 +1252,8 @@ describe("PriceService utility methods", () => {
       // effectiveUsable = max(1, 2) = 2
       // Tickets needed = ceil(9 / 2) = 5
       // Total capacity = 5 × 10 = 50, usable = 5 × 2 = 10, waste = 40
-      // Waste ratio = 40/50 = 80% ≥ 20%
       expect(result.wasteWarning).toBeDefined();
-      expect(result.wasteWarning).toContain("Significant waste expected");
+      expect(result.wasteWarning).toContain("40 of 50 trips");
       expect(result.journeysWasted).toBe(40);
     });
 
@@ -1268,7 +1267,6 @@ describe("PriceService utility methods", () => {
       // effectiveUsable = max(1, 10) = 10
       // Tickets needed = ceil(22 / 10) = 3
       // Total capacity = 3 × 10 = 30, usable = 3 × 10 = 30, waste = 0
-      // Waste ratio = 0/30 = 0% < 20%, so no warning
       expect(result.wasteWarning).toBeUndefined();
       expect(result.journeysWasted).toBe(0);
     });

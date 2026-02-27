@@ -95,7 +95,7 @@ export const fi: TranslationMap = {
     "Kuukausi (\u20AC{price}) {discount}% alennuksella = \u20AC{cost}/kk",
   "calc.season": "30 päivän lippu: \u20AC{cost}/kk",
   "calc.wasteWarning":
-    "Merkittävää hukkaa odotettavissa (\u226520%) voimassaolorajoitusten vuoksi.",
+    "~{wasted}/{total} matkasta voi jäädä käyttämättä voimassaolorajoitusten vuoksi.",
 
   // Errors
   "error.unexpected": "Odottamaton virhe laskennassa",

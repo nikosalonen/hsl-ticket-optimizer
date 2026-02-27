@@ -95,7 +95,7 @@ export const sv: TranslationMap = {
     "Månad (\u20AC{price}) med {discount}% rabatt = \u20AC{cost}/mån",
   "calc.season": "30-dagars biljett: \u20AC{cost}/mån",
   "calc.wasteWarning":
-    "Betydande slöseri förväntas (\u226520%) på grund av giltighetsbegränsningar.",
+    "~{wasted} av {total} resor kan förfalla oanvända på grund av giltighetsbegränsningar.",
 
   // Errors
   "error.unexpected": "Oväntat fel vid beräkning",

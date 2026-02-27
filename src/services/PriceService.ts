@@ -917,10 +917,11 @@ export class PriceService {
       Math.round(annualTicketsNeeded * seriesTicket.price * 100) / 100;
 
     let wasteWarning: string | undefined;
-    const wasteRatio =
-      totalJourneysCapacity === 0 ? 0 : journeysWasted / totalJourneysCapacity;
-    if (wasteRatio >= 0.2) {
-      wasteWarning = t("calc.wasteWarning");
+    if (journeysWasted > 0) {
+      wasteWarning = t("calc.wasteWarning", {
+        wasted: journeysWasted,
+        total: totalJourneysCapacity,
+      });
     }
 
     const calculation = t("calc.series", {

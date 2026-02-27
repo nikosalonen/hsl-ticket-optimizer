@@ -95,7 +95,7 @@ export const en: TranslationMap = {
     "Monthly (\u20AC{price}) with {discount}% discount = \u20AC{cost}/month",
   "calc.season": "30-day ticket: \u20AC{cost}/month",
   "calc.wasteWarning":
-    "Significant waste expected (\u226520%) due to validity limits.",
+    "~{wasted} of {total} trips may expire unused due to validity limits.",
 
   // Errors
   "error.unexpected": "Unexpected error occurred while calculating",
