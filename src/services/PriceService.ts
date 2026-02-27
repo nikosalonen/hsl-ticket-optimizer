@@ -50,6 +50,9 @@ export class PriceService {
   private static readonly CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
   private static readonly REQUEST_TIMEOUT = 10000; // 10 seconds
   private static readonly WEEKS_PER_MONTH = 4.33;
+  private static readonly WEEKS_PER_YEAR = 52;
+  private static readonly MONTHS_PER_YEAR = 12;
+  private static readonly VACATION_WEEKS = 4;
 
   /**
    * Fetch all ticket prices for given zones and customer group
@@ -782,6 +785,7 @@ export class PriceService {
   calculateSingleTicketCost(
     tripsPerWeek: number,
     singleTicketPrice: number,
+    summerVacation: boolean = false,
   ): {
     monthlyCost: number;
     annualCost: number;
@@ -819,7 +823,10 @@ export class PriceService {
     const tripsPerMonth = Math.ceil(
       tripsPerWeek * PriceService.WEEKS_PER_MONTH,
     );
-    const tripsPerYear = Math.ceil(tripsPerWeek * 52);
+    const activeWeeks = summerVacation
+      ? PriceService.WEEKS_PER_YEAR - PriceService.VACATION_WEEKS
+      : PriceService.WEEKS_PER_YEAR;
+    const tripsPerYear = Math.ceil(tripsPerWeek * activeWeeks);
 
     // Calculate total tickets needed (round up to ensure coverage)
     const totalTickets = tripsPerMonth;
@@ -855,6 +862,7 @@ export class PriceService {
   calculateSeriesTicketCost(
     tripsPerWeek: number,
     seriesTicket: { price: number; journeys: number; validityDays: number },
+    summerVacation: boolean = false,
   ): {
     monthlyCost: number;
     annualCost: number;
@@ -877,7 +885,10 @@ export class PriceService {
     const tripsPerMonth = Math.ceil(
       tripsPerWeek * PriceService.WEEKS_PER_MONTH,
     );
-    const tripsPerYear = Math.ceil(tripsPerWeek * 52);
+    const activeWeeks = summerVacation
+      ? PriceService.WEEKS_PER_YEAR - PriceService.VACATION_WEEKS
+      : PriceService.WEEKS_PER_YEAR;
+    const tripsPerYear = Math.ceil(tripsPerWeek * activeWeeks);
 
     if (tripsPerMonth === 0) {
       return {
@@ -945,7 +956,10 @@ export class PriceService {
   /**
    * Calculate fixed-price monthly ticket cost
    */
-  calculateMonthlyTicketCost(monthlyPrice: number): {
+  calculateMonthlyTicketCost(
+    monthlyPrice: number,
+    summerVacation: boolean = false,
+  ): {
     monthlyCost: number;
     annualCost: number;
     calculation: string;
@@ -954,7 +968,10 @@ export class PriceService {
       throw new Error("Monthly ticket price must be greater than 0");
     }
     const monthlyCost = Math.round(monthlyPrice * 100) / 100;
-    const annualCost = Math.round(monthlyCost * 12 * 100) / 100;
+    const activeMonths = summerVacation
+      ? PriceService.MONTHS_PER_YEAR - 1
+      : PriceService.MONTHS_PER_YEAR;
+    const annualCost = Math.round(monthlyCost * activeMonths * 100) / 100;
     const calculation = t("calc.fixedMonthly", { cost: monthlyCost });
     return {
       monthlyCost,
@@ -983,7 +1000,7 @@ export class PriceService {
         ? continuousMonthlyPrice
         : Math.round(monthlyPrice * (1 - discountRatio) * 100) / 100;
     const monthlyCost = Math.round(effective * 100) / 100;
-    const annualCost = Math.round(monthlyCost * 12 * 100) / 100;
+    const annualCost = Math.round(monthlyCost * PriceService.MONTHS_PER_YEAR * 100) / 100;
     const calc =
       continuousMonthlyPrice && continuousMonthlyPrice > 0
         ? t("calc.fixedMonthly", { cost: monthlyCost })
@@ -1002,7 +1019,10 @@ export class PriceService {
   /**
    * Calculate season ticket cost (30-day ticket is already monthly price)
    */
-  calculateSeasonTicketCost(seasonPrice: number): {
+  calculateSeasonTicketCost(
+    seasonPrice: number,
+    summerVacation: boolean = false,
+  ): {
     monthlyCost: number;
     annualCost: number;
     calculation: string;
@@ -1011,7 +1031,10 @@ export class PriceService {
       throw new Error("Season ticket price must be greater than 0");
     }
     const monthlyCost = Math.round(seasonPrice * 100) / 100;
-    const annualCost = Math.round(seasonPrice * 12 * 100) / 100;
+    const activeMonths = summerVacation
+      ? PriceService.MONTHS_PER_YEAR - 1
+      : PriceService.MONTHS_PER_YEAR;
+    const annualCost = Math.round(seasonPrice * activeMonths * 100) / 100;
     const calculation = t("calc.season", { cost: monthlyCost });
     return {
       monthlyCost,
@@ -1032,6 +1055,7 @@ export class PriceService {
       season: number;
       continuousMonthly?: number;
     },
+    summerVacation: boolean = false,
   ): {
     single: { monthlyCost: number; annualCost: number; calculation: string };
     series10?: {
@@ -1063,8 +1087,8 @@ export class PriceService {
       | "season"
       | "continuousMonthly";
   } {
-    const single = this.calculateSingleTicketCost(tripsPerWeek, prices.single);
-    const season = this.calculateSeasonTicketCost(prices.season);
+    const single = this.calculateSingleTicketCost(tripsPerWeek, prices.single, summerVacation);
+    const season = this.calculateSeasonTicketCost(prices.season, summerVacation);
     const continuousMonthly = this.calculateContinuousMonthlyTicketCost(
       prices.season,
       prices.continuousMonthly,
@@ -1072,10 +1096,10 @@ export class PriceService {
 
     // Calculate series tickets only if they are available
     const series10 = prices.series10
-      ? this.calculateSeriesTicketCost(tripsPerWeek, prices.series10)
+      ? this.calculateSeriesTicketCost(tripsPerWeek, prices.series10, summerVacation)
       : undefined;
     const series20 = prices.series20
-      ? this.calculateSeriesTicketCost(tripsPerWeek, prices.series20)
+      ? this.calculateSeriesTicketCost(tripsPerWeek, prices.series20, summerVacation)
       : undefined;
 
     // Build options array with only available tickets

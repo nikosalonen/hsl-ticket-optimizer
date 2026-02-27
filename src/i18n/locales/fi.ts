@@ -14,6 +14,8 @@ export const fi: TranslationMap = {
   "form.municipality.label": "Kotikunta",
   "form.trips.label": "Matkat viikossa",
   "form.trips.unit": "matkaa / viikko",
+  "form.vacation.label": "Kesäloma (4 viikkoa ilman matkoja)",
+  "form.vacation.description": "Vähentää vuosikustannusta kuukauden verran",
 
   // Municipalities
   "municipality.helsinki": "Helsinki",

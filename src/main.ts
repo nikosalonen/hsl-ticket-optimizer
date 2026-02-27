@@ -208,7 +208,7 @@ function normalizeZonesInput(rawValue: string): string {
 
 type OptimalResult = ReturnType<typeof priceService.findOptimalOption>;
 
-function renderComparison(result: OptimalResult) {
+function renderComparison(result: OptimalResult, summerVacation: boolean = false) {
   type RowKey =
     | "single"
     | "series10"
@@ -356,7 +356,7 @@ function renderComparison(result: OptimalResult) {
 				<div class="stat-desc text-primary-content/60 text-base">${optimalRow?.label || result.optimal}</div>
 				${
           optimalSavings > 0
-            ? `<div class="stat-desc text-primary-content/70 mt-1">${t("results.savingsTotal", { amount: optimalSavings.toFixed(2), annualAmount: (optimalSavings * 12).toFixed(2) })}</div>`
+            ? `<div class="stat-desc text-primary-content/70 mt-1">${t("results.savingsTotal", { amount: optimalSavings.toFixed(2), annualAmount: (optimalSavings * (summerVacation ? 11 : 12)).toFixed(2) })}</div>`
             : ""
         }
 			</div>
@@ -446,6 +446,7 @@ async function renderTripsCostChart(
     series10?: { price: number; journeys: number; validityDays: number };
     series20?: { price: number; journeys: number; validityDays: number };
   },
+  summerVacation: boolean = false,
 ) {
   const ctx = document.getElementById(
     "trips-cost-chart",
@@ -474,7 +475,7 @@ async function renderTripsCostChart(
   const series20Costs: number[] = [];
 
   for (const trips of tripsRange) {
-    const comparison = priceService.findOptimalOption(trips, baseOptions);
+    const comparison = priceService.findOptimalOption(trips, baseOptions, summerVacation);
     singleCosts.push(comparison.single.monthlyCost);
     seasonCosts.push(comparison.season.monthlyCost);
     contMonthlyCosts.push(comparison.continuousMonthly.monthlyCost);
@@ -600,6 +601,8 @@ async function calculate() {
   }
 
   const tripsPerWeek = Number(tripsInput?.value || "10");
+  const summerVacation =
+    document.querySelector<HTMLInputElement>("#summerVacation")?.checked ?? false;
   const homemunicipality = (
     municipalitySelect?.value || "helsinki"
   ).toLowerCase();
@@ -642,12 +645,13 @@ async function calculate() {
     const comparison = priceService.findOptimalOption(
       tripsPerWeek,
       comparisonOptions,
+      summerVacation,
     );
 
-    const html = renderComparison(comparison);
+    const html = renderComparison(comparison, summerVacation);
     showResults(html);
     renderCostComparisonChart(comparison);
-    void renderTripsCostChart(tripsPerWeek, comparisonOptions);
+    void renderTripsCostChart(tripsPerWeek, comparisonOptions, summerVacation);
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : t("error.unexpected");
@@ -680,6 +684,12 @@ if (zonesEl) {
 
 if (municipalityEl) {
   municipalityEl.addEventListener("change", () => void calculate());
+}
+
+const vacationEl =
+  document.querySelector<HTMLInputElement>("#summerVacation");
+if (vacationEl) {
+  vacationEl.addEventListener("change", () => void calculate());
 }
 
 if (formEl) {

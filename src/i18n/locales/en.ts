@@ -14,6 +14,8 @@ export const en: TranslationMap = {
   "form.municipality.label": "Municipality",
   "form.trips.label": "Trips per week",
   "form.trips.unit": "trips / week",
+  "form.vacation.label": "Summer vacation (4 weeks without trips)",
+  "form.vacation.description": "Reduces annual cost by one month",
 
   // Municipalities (Finnish names, except Muu → Other)
   "municipality.helsinki": "Helsinki",

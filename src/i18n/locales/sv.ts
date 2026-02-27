@@ -14,6 +14,8 @@ export const sv: TranslationMap = {
   "form.municipality.label": "Hemkommun",
   "form.trips.label": "Resor per vecka",
   "form.trips.unit": "resor / vecka",
+  "form.vacation.label": "Sommarsemester (4 veckor utan resor)",
+  "form.vacation.description": "Minskar årskostnaden med en månad",
 
   // Municipalities (Swedish names)
   "municipality.helsinki": "Helsingfors",
