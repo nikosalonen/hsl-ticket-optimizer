@@ -1167,7 +1167,7 @@ if (formEl) {
   });
 }
 
-// Cost view toggle (monthly / annual)
+/** Syncs the monthly/annual toggle button active states with the current {@link costView}. */
 function updateCostViewToggle() {
   for (const btn of document.querySelectorAll<HTMLButtonElement>(
     "#cost-view-toggle [data-cost-view]",

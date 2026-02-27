@@ -219,6 +219,7 @@ export class CacheManager {
     }
   }
 
+  /** Checks whether a parsed cache item has invalid or missing numeric fields. */
   private isMalformedItem(cacheItem: CacheItem): boolean {
     return (
       !Number.isFinite(cacheItem.timestamp) ||
@@ -228,6 +229,7 @@ export class CacheManager {
     );
   }
 
+  /** Returns `true` if the elapsed time since storage exceeds the item's TTL. */
   private isItemExpired(cacheItem: CacheItem): boolean {
     return Date.now() - cacheItem.timestamp > cacheItem.ttl;
   }
