@@ -20,7 +20,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",
     "@tailwindcss/vite": "^4.2.1",
-    "@types/node": "^25.3.2",
+    "@types/node": "^25.3.3",
     "@vitest/ui": "^4.0.18",
     "daisyui": "^5.5.19",
     "jsdom": "^28.1.0",
