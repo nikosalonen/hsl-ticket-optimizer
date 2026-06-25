@@ -18,16 +18,16 @@
     "format:check": "biome format ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.4",
-    "@tailwindcss/vite": "^4.2.1",
-    "@types/node": "^25.3.2",
-    "@vitest/ui": "^4.0.18",
-    "daisyui": "^5.5.19",
-    "jsdom": "^28.1.0",
-    "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "@biomejs/biome": "^2.5.1",
+    "@tailwindcss/vite": "^4.3.1",
+    "@types/node": "^26.0.1",
+    "@vitest/ui": "^4.1.9",
+    "daisyui": "^5.5.23",
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.0",
+    "vitest": "^4.1.9"
   },
   "keywords": [
     "hsl",
