@@ -47,7 +47,7 @@ vi.mock("../src/utils/CacheManager.js", () => ({
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 // Mock responses for all tests
 const mockSingleResponse = {
@@ -723,7 +723,7 @@ describe("PriceService integration", () => {
 describe("PriceService utility methods", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    global.fetch = mockFetch;
+    globalThis.fetch = mockFetch;
   });
   describe("getZoneCode", () => {
     it("should convert zone letters to correct API codes", () => {
