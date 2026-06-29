@@ -25,8 +25,8 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9(vitest@4.1.9)
       daisyui:
-        specifier: ^5.5.23
-        version: 5.5.23
+        specifier: ^5.6.5
+        version: 5.6.5
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
@@ -628,8 +628,8 @@ packages:
     resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
 
-  daisyui@5.5.23:
-    resolution: {integrity: sha512-xuheNUSL4T6ZVtWXoioqcNkjoyGX85QTDz4HTw2aBPfqk4fuMjax5HDo8qCmpV6M1YN8bGvfx5BpYCoDeRlt+A==}
+  daisyui@5.6.5:
+    resolution: {integrity: sha512-pPQf1se8nDymB5uccN0eTFABwpDViYmq4ygN2YNX+/KFZDk9IYKT5Pdn+rkcHkOXowRObCampMjm/ZX1lU5VYg==}
 
   data-urls@7.0.0:
     resolution: {integrity: sha512-23XHcCF+coGYevirZceTVD7NdJOqVn+49IHyxgszm+JIiHLoB2TkmPtsYkNWT1pvRSGkc35L6NHs0yHkN2SumA==}
@@ -1450,7 +1450,7 @@ snapshots:
       mdn-data: 2.27.1
       source-map-js: 1.2.1
 
-  daisyui@5.5.23: {}
+  daisyui@5.6.5: {}
 
   data-urls@7.0.0:
     dependencies:
